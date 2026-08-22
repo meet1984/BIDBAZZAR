@@ -85,6 +85,7 @@ export function createApp() {
 
   app.get("/health", healthHandler);
   app.get("/api/health", healthHandler);
+  app.get(["/api", "/api/"], healthHandler);
 
   app.use("/api/auth", authRouter);
   app.use("/api/watchlist", watchlistRouter);
