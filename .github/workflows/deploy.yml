@@ -60,12 +60,24 @@ jobs:
           port: ${{ secrets.CPANEL_PORT }}
           script: |
             set -eu
-            cd /home/dcgixwyd/bidmylot.backend
-            test -f app.js
-            test -f dist/app.js
-            test -f .env
-            mkdir -p uploads private_uploads tmp
-            touch tmp/restart.txt
+            BACKEND=/home/dcgixwyd/bidmylot.backend
+            echo "Checking $BACKEND"
+
+            [ -d "$BACKEND" ] || { echo "ERROR: backend directory is missing"; exit 1; }
+            [ -f "$BACKEND/app.js" ] || { echo "ERROR: app.js is missing"; exit 1; }
+            [ -f "$BACKEND/dist/app.js" ] || { echo "ERROR: dist/app.js is missing"; exit 1; }
+            [ -f "$BACKEND/package.json" ] || { echo "ERROR: package.json is missing"; exit 1; }
+            [ -d "$BACKEND/node_modules" ] || { echo "ERROR: node_modules is missing"; exit 1; }
+
+            if [ -f "$BACKEND/.env" ]; then
+              echo "Environment: .env file found"
+            else
+              echo "Environment: .env not found; cPanel variables must be configured"
+            fi
+
+            mkdir -p "$BACKEND/uploads" "$BACKEND/private_uploads" "$BACKEND/tmp"
+            touch "$BACKEND/tmp/restart.txt"
+            echo "Passenger restart requested successfully"
 
       - name: Prepare frontend
         run: |
@@ -88,4 +100,4 @@ jobs:
 # CPANEL_HOST, CPANEL_USER, CPANEL_SSH_KEY, CPANEL_PORT
 #
 # Create /home/dcgixwyd/bidmylot.backend/.env manually before the first deploy.
-# Database migrations are manual and are never run
+# Database migrations are manual and are never ru

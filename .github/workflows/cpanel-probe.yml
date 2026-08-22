@@ -20,23 +20,36 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
           script: |
-            set -eu
             BACKEND=/home/dcgixwyd/bidmylot.backend
             FRONTEND=/home/dcgixwyd/bidmylot.com
+            FAILED=0
 
-            test -d "$BACKEND"
-            test -f "$BACKEND/app.js"
-            test -f "$BACKEND/dist/app.js"
-            test -f "$BACKEND/package.json"
-            test -f "$BACKEND/.env"
-            test -d "$BACKEND/node_modules"
-            test -d "$BACKEND/uploads"
-            test -d "$BACKEND/private_uploads"
-            test -f "$FRONTEND/index.html"
-            test -f "$FRONTEND/.htaccess"
+            check_dir() {
+              if [ -d "$1" ]; then echo "OK: $1"; else echo "MISSING: $1"; FAILED=1; fi
+            }
+
+            check_file() {
+              if [ -f "$1" ]; then echo "OK: $1"; else echo "MISSING: $1"; FAILED=1; fi
+            }
+
+            check_dir "$BACKEND"
+            check_file "$BACKEND/app.js"
+            check_file "$BACKEND/dist/app.js"
+            check_file "$BACKEND/package.json"
+            check_dir "$BACKEND/node_modules"
+            check_dir "$BACKEND/uploads"
+            check_dir "$BACKEND/private_uploads"
+            check_file "$FRONTEND/index.html"
+            check_file "$FRONTEND/.htaccess"
+
+            if [ -f "$BACKEND/.env" ]; then
+              echo "OK: $BACKEND/.env"
+            else
+              echo "NOTICE: .env is absent; verify cPanel environment variables"
+            fi
 
             echo "Node: $(node --version 2>/dev/null || echo 'managed by cPanel')"
-            echo "Backend files: OK"
-            echo "Frontend files: OK"
+            [ "$FAILED" -eq 0 ] || exit 1
+            echo "cPanel structure: OK"
 
-# Read-only check: no deployment, migration, restart or file modification.
+# Read-only check: no deployment, migration, resta
