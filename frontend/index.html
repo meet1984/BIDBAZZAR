@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bidmylot | Premium Real-Time Auction Marketplace</title>
+  <!-- Google Fonts: Playfair Display & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <script>
+    if (typeof window !== "undefined") {
+      if (!window.crypto) window.crypto = {};
+      if (!window.crypto.randomUUID) {
+        window.crypto.randomUUID = function () {
+          return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, function (c) {
+            return (
+              c ^
+              ((window.crypto.getRandomValues
+                ? window.crypto.getRandomValues(new Uint8Array(1))[0]
+                : (Math.random() * 256) | 0) &
+                (15 >> (c / 4)))
+            ).toString(16);
+          });
+        };
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-white text-slate-900 font-sans antialiased min-h-screen selection:bg-blue-600 selection:text-white">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

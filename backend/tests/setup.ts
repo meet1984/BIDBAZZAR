@@ -1,0 +1,15 @@
+process.env.NODE_ENV = "test";
+process.env.CLIENT_ORIGIN = "http://localhost:5173";
+process.env.DB_HOST = "127.0.0.1";
+process.env.DB_USER = "bidmylot_test";
+process.env.DB_PASSWORD = "test_password";
+process.env.DB_NAME = "bidmylot_test";
+process.env.JWT_ACCESS_SECRET = "test_access_secret_0123456789abcdef0123456789abcdef";
+process.env.SMTP_HOST = "localhost";
+process.env.SMTP_PORT = "2525";
+process.env.SMTP_SECURE = "false";
+process.env.SMTP_USER = "test";
+process.env.SMTP_PASSWORD = "test";
+process.env.SMTP_FROM_NAME = "BidMyLot Test";
+process.env.SMTP_FROM_EMAIL = "test@bidmylot.invalid";
+process.env.SUPPORT_NOTIFICATION_EMAIL = "support@bidmylot.invalid";

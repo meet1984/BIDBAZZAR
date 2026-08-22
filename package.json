@@ -1,0 +1,25 @@
+{
+  "name": "bidmylot",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace @bidmylot/frontend",
+    "dev:backend": "npm run dev --workspace @bidmylot/backend",
+    "build": "npm run build --workspace @bidmylot/frontend && npm run build --workspace @bidmylot/backend",
+    "lint": "npm run lint --workspace @bidmylot/frontend && npm run lint --workspace @bidmylot/backend",
+    "typecheck": "npm run typecheck --workspace @bidmylot/frontend && npm run typecheck --workspace @bidmylot/backend",
+    "test": "npm run test --workspace @bidmylot/frontend && npm run test --workspace @bidmylot/backend",
+    "validate": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "db:migrate": "npm run db:migrate --workspace @bidmylot/backend",
+    "db:migrate:dry": "npm run db:migrate:dry --workspace @bidmylot/backend",
+    "db:verify-schema": "npm run db:verify-schema --workspace @bidmylot/backend",
+    "db:seed:admin": "npm run db:seed:admin --workspace @bidmylot/backend"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}
