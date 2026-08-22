@@ -19,6 +19,8 @@ describe("health routes", () => {
     expect(response.body).toHaveProperty("services");
     expect(response.body.services).toHaveProperty("database");
     expect(["ok", "error"]).toContain(response.body.services.database);
+    expect(response.body.services).toHaveProperty("schema");
+    expect(["ok", "error", "unknown"]).toContain(response.body.services.schema);
   });
 
   it("still returns 404 ROUTE_NOT_FOUND for unknown routes", async () => {

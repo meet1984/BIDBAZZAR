@@ -188,4 +188,4 @@ ALTER TABLE listing_audit_log
   ADD CONSTRAINT fk_listing_audit_actor
     FOREIGN KEY (actor_account_id) REFERENCES accounts(id) ON DELETE RESTRICT,
   ADD CONSTRAINT fk_listing_audit_listing
-    FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE RESTRICT
+    FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE RESTRICT;

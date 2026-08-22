@@ -2,6 +2,10 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # The API is mounted as a cPanel/Passenger application. Never rewrite API
+  # requests to the frontend index.html fallback.
+  RewriteRule ^api(?:/|$) - [L]
   
   # Allow direct access to existing static files or directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]

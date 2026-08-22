@@ -68,10 +68,13 @@ async function applyMigration018(connection: Connection): Promise<void> {
       (SELECT COUNT(*) FROM multi_unit_offers WHERE offered_price_per_unit <= 0) +
       (SELECT COUNT(*) FROM multi_unit_allocations WHERE unit_price <= 0) +
       (SELECT COUNT(*) FROM (SELECT listing_id,buyer_id FROM offers WHERE status IN ('submitted','revised','shortlisted','contact_requested','countered','accepted_pending_buyer') GROUP BY listing_id,buyer_id HAVING COUNT(*)>1) x) +
-      (SELECT COUNT(*) FROM (SELECT listing_id,buyer_id FROM multi_unit_offers WHERE status IN ('submitted','revised','shortlisted','countered','allocation_proposed','allocation_reserved') GROUP BY listing_id,buyer_id HAVING COUNT(*)>1) y) AS total
+      (SELECT COUNT(*) FROM (SELECT listing_id,buyer_id FROM multi_unit_offers WHERE status IN ('submitted','revised','shortlisted','countered','allocation_proposed','allocation_reserved') GROUP BY listing_id,buyer_id HAVING COUNT(*)>1) y) +
+      (SELECT COUNT(*) FROM (SELECT order_id FROM disputes WHERE status IN ('opened','under_review') GROUP BY order_id HAVING COUNT(*)>1) z) AS total
   `);
   if (Number(conflicts[0]?.total ?? 0) > 0) {
-    throw new Error("Migration 018 preflight found orphan identities or invalid offer values. Resolve them before retrying.");
+    throw new Error(
+      "Migration 018 preflight found orphan identities, invalid offer values, duplicate active offers, or duplicate active disputes. Resolve them before retrying.",
+    );
   }
 
   for (const spec of [
@@ -88,6 +91,13 @@ async function applyMigration018(connection: Connection): Promise<void> {
       await connection.query(`ALTER TABLE \`${spec.table}\` ADD CONSTRAINT \`${spec.newFk}\` FOREIGN KEY (\`${spec.newColumn}\`) REFERENCES accounts(id) ON DELETE ${spec.onDelete}`);
     }
   }
+
+  // Migration 010 retained the legacy two-value enum. The application supports
+  // distributor sellers, so finish this change even when migration 018 resumes
+  // after MySQL has already committed some of its DDL statements.
+  await connection.query(
+    "ALTER TABLE seller_profiles MODIFY seller_type ENUM('individual','business','distributor') NOT NULL",
+  );
 
   await connection.query(`CREATE TABLE IF NOT EXISTS listing_watchlists (
     account_id BIGINT UNSIGNED NOT NULL, listing_id BIGINT UNSIGNED NOT NULL,
@@ -233,11 +243,6 @@ async function applyMigration021(connection: Connection): Promise<void> {
 
 async function run(): Promise<void> {
   const files = await migrationFiles();
-  if (isDryRun) {
-    console.log(`Validated ${files.length} migration file(s): ${files.join(", ")}`);
-    return;
-  }
-
   const { env } = await import("../config/env.js");
   const connection = await mysql.createConnection({
     host: env.DB_HOST,
@@ -250,6 +255,26 @@ async function run(): Promise<void> {
   });
 
   try {
+    if (isDryRun) {
+      const hasMigrationTable = await tableExists(connection, "schema_migrations");
+      const completed = new Set<string>();
+      if (hasMigrationTable) {
+        const [rows] = await connection.query<(RowDataPacket & { filename: string })[]>(
+          "SELECT filename FROM schema_migrations",
+        );
+        for (const row of rows) completed.add(row.filename);
+      }
+      const pending = files.filter((file) => !completed.has(file));
+      const unknown = [...completed].filter((file) => !files.includes(file));
+      console.log(`Validated ${files.length} migration file(s).`);
+      console.log(`Applied: ${files.filter((file) => completed.has(file)).join(", ") || "none"}`);
+      console.log(`Pending: ${pending.join(", ") || "none"}`);
+      if (unknown.length) {
+        console.warn(`Recorded but missing locally: ${unknown.join(", ")}`);
+      }
+      return;
+    }
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         filename VARCHAR(255) NOT NULL PRIMARY KEY,

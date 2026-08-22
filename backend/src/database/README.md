@@ -8,4 +8,4 @@ Each migration file should be written to be safely re-runnable / idempotent up t
 
 **Important**: MySQL automatically and implicitly commits transactions upon executing DDL statements (like `CREATE TABLE` or `ALTER TABLE`). Because of this, if a migration file contains multiple DDL statements and a later one fails, the earlier DDL statements in that same file are already permanently applied. The `rollback()` call in `migrate.ts` cannot undo them. 
 
-If a migration fails partially, it requires manual inspection of `schema_migrations` and the actual database tables before re-running.
+If a migration fails partially, inspect `schema_migrations` and the actual database tables before re-running. Migrations 018 and 021 use repair-aware compiled handlers because those migrations contain multiple DDL operations and must safely resume after partial application.

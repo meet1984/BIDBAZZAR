@@ -70,16 +70,29 @@ export function createApp() {
 
   const healthHandler = asyncHandler(async (_req, res) => {
     let dbStatus = "ok";
+    let schemaStatus = "ok";
     try {
       await pool.query("SELECT 1");
+      const [schemaRows] = await pool.query<import("mysql2/promise").RowDataPacket[]>(`
+        SELECT COUNT(*) AS total
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+          AND table_name IN (
+            'accounts', 'seller_profiles', 'listings', 'listing_images',
+            'listing_watchlists', 'multi_unit_allocations'
+          )
+      `);
+      schemaStatus = Number(schemaRows[0]?.total ?? 0) === 6 ? "ok" : "error";
     } catch {
       dbStatus = "error";
+      schemaStatus = "unknown";
     }
-    const statusCode = dbStatus === "ok" ? 200 : 503;
+    const healthy = dbStatus === "ok" && schemaStatus === "ok";
+    const statusCode = healthy ? 200 : 503;
     res.status(statusCode).json({
-      status: dbStatus === "ok" ? "healthy" : "unhealthy",
+      status: healthy ? "healthy" : "unhealthy",
       timestamp: new Date().toISOString(),
-      services: { database: dbStatus },
+      services: { database: dbStatus, schema: schemaStatus },
     });
   });
 
