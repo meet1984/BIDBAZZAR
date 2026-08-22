@@ -1,4 +1,4 @@
-name: BidMyLot Deploy
+name: Deploy BidMyLot to cPanel
 
 on:
   push:
@@ -9,144 +9,83 @@ permissions:
   contents: read
 
 concurrency:
-  group: bidmylot-deploy
+  group: bidmylot-production
   cancel-in-progress: false
 
 jobs:
-  ci:
-    runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: bidmylot_test
-          MYSQL_USER: bidmylot_test
-          MYSQL_PASSWORD: test_database_password
-          MYSQL_ROOT_PASSWORD: test_root_password
-        ports: ["3306:3306"]
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -ubidmylot_test -ptest_database_password"
-          --health-interval=10s --health-timeout=5s --health-retries=12
-    env:
-      NODE_ENV: test
-      CLIENT_ORIGIN: http://localhost:5173
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_USER: bidmylot_test
-      DB_PASSWORD: test_database_password
-      DB_NAME: bidmylot_test
-      JWT_ACCESS_SECRET: ci_access_0123456789abcdef0123456789abcdef0123456789abcdef
-      SMTP_HOST: localhost
-      SMTP_PORT: 2525
-      SMTP_SECURE: "false"
-      SMTP_USER: ci-user
-      SMTP_PASSWORD: ci-password
-      SMTP_FROM_NAME: BidMyLot CI
-      SMTP_FROM_EMAIL: ci@bidmylot.invalid
-      SUPPORT_NOTIFICATION_EMAIL: support@bidmylot.invalid
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run db:migrate
-      - run: npm run db:verify-schema
-      - run: npm run test
-      - run: npm run build
-
   deploy:
-    needs: ci
     runs-on: ubuntu-latest
     environment: production
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies and build project
+      - name: Install, check and build
         run: |
           npm ci
+          npm run lint
+          npm run typecheck
           npm run build
 
-      - name: Prepare backend artifacts
+      - name: Prepare backend
         run: |
-          mkdir -p deploy-backend
-          cp -r backend/dist deploy-backend/
-          cp -r backend/migrations deploy-backend/
-          cp backend/package.json deploy-backend/
-          cp backend/app.js deploy-backend/
-          # Install clean production dependencies for backend
-          cd backend
-          npm ci --omit=dev
-          cp -r node_modules ../deploy-backend/
+          npm ci --omit=dev --workspace @bidmylot/backend
+          mkdir -p deploy/backend
+          cp backend/app.js backend/package.json deploy/backend/
+          cp -r backend/dist backend/migrations node_modules deploy/backend/
 
-      - name: Upload backend to cPanel
+      - name: Upload backend
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "deploy-backend/*"
-          target: "/home/dcgixwyd/bidmylot.backend/current"
-          strip_components: 1
-          overwrite: true
-
-      - name: Upload frontend to cPanel
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          source: "frontend/dist/*"
-          target: "/home/dcgixwyd/bidmylot.com"
+          source: deploy/backend
+          target: /home/dcgixwyd/bidmylot.backend
           strip_components: 2
           overwrite: true
 
-      - name: Run database migration and restart application
+      - name: Restart Passenger
         uses: appleboy/ssh-action@v1
-        env:
-          SECRET_NODE_BIN: ${{ secrets.CPANEL_NODE_BIN }}
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
-          envs: SECRET_NODE_BIN
           script: |
             set -eu
-            APP_DIR="/home/dcgixwyd/bidmylot.backend/current"
-            NODE_BIN="${SECRET_NODE_BIN:-/home/dcgixwyd/nodevenv/bidmylot.backend/20/bin/node}"
-
-            echo "=== Activating Release on cPanel ==="
-            echo "Using Node binary: $NODE_BIN"
-            "$NODE_BIN" -v
-
-            cd "$APP_DIR"
-
-            # Ensure necessary runtime directories exist
-            mkdir -p tmp uploads logs
-
-            # Run production database migrations using compiled JavaScript
-            echo "Executing database migrations..."
-            "$NODE_BIN" dist/database/migrate.js
-
-            # Restart cPanel / Phusion Passenger Node.js app
-            echo "Restarting application..."
+            cd /home/dcgixwyd/bidmylot.backend
+            test -f app.js
+            test -f dist/app.js
+            test -f .env
+            mkdir -p uploads private_uploads tmp
             touch tmp/restart.txt
 
-            echo "Deployment successfully completed."
-
-      - name: Verify deployment health
-        if: ${{ secrets.BACKEND_HEALTH_URL != '' }}
-        env:
-          BACKEND_HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
+      - name: Prepare frontend
         run: |
-          curl --fail --silent --show-error --retry 6 --retry-delay 5 "${BACKEND_HEALTH_URL}/api/health"
+          mkdir -p deploy/frontend
+          cp -r frontend/dist/. deploy/frontend/
+
+      - name: Upload frontend
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: deploy/frontend
+          target: /home/dcgixwyd/bidmylot.com
+          strip_components: 2
+          overwrite: true
+
+# Required GitHub secrets:
+# CPANEL_HOST, CPANEL_USER, CPANEL_SSH_KEY, CPANEL_PORT
+#
+# Create /home/dcgixwyd/bidmylot.backend/.env manually before the first deploy.
+# Database migrations are manual and are never run

@@ -1,15 +1,18 @@
-name: cPanel Connectivity & Diagnostic Probe
+name: Check BidMyLot cPanel
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   probe:
-    name: Probe cPanel SSH & File Structure
     runs-on: ubuntu-latest
     environment: production
+
     steps:
-      - name: Test SSH Connection and cPanel Environment
+      - name: Check backend and frontend files
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.CPANEL_HOST }}
@@ -17,51 +20,23 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: ${{ secrets.CPANEL_PORT }}
           script: |
-            echo "================================================"
-            echo "=== cPanel Host Diagnostic Probe ==="
-            echo "================================================"
-            echo "[1] Current User & Hostname:"
-            whoami
-            hostname
-            pwd
+            set -eu
+            BACKEND=/home/dcgixwyd/bidmylot.backend
+            FRONTEND=/home/dcgixwyd/bidmylot.com
 
-            echo ""
-            echo "[2] Node.js & NPM System Paths:"
-            echo "Node path: $(which node 2>/dev/null || echo 'NOT_FOUND_IN_PATH')"
-            echo "NPM path:  $(which npm 2>/dev/null || echo 'NOT_FOUND_IN_PATH')"
-            node -v 2>/dev/null || echo "Node execution test failed"
-            npm -v 2>/dev/null || echo "NPM execution test failed"
+            test -d "$BACKEND"
+            test -f "$BACKEND/app.js"
+            test -f "$BACKEND/dist/app.js"
+            test -f "$BACKEND/package.json"
+            test -f "$BACKEND/.env"
+            test -d "$BACKEND/node_modules"
+            test -d "$BACKEND/uploads"
+            test -d "$BACKEND/private_uploads"
+            test -f "$FRONTEND/index.html"
+            test -f "$FRONTEND/.htaccess"
 
-            echo ""
-            echo "[3] Target Deployment Directories Inspection:"
-            BACKEND_ROOT="/home/dcgixwyd/bidmylot.backend"
-            FRONTEND_ROOT="/home/dcgixwyd/bidmylot.com"
+            echo "Node: $(node --version 2>/dev/null || echo 'managed by cPanel')"
+            echo "Backend files: OK"
+            echo "Frontend files: OK"
 
-            if [ -d "$BACKEND_ROOT" ]; then
-              echo "✓ Backend root directory exists: $BACKEND_ROOT"
-              ls -ld "$BACKEND_ROOT"
-            else
-              echo "✗ Backend root directory NOT found: $BACKEND_ROOT"
-              mkdir -p "$BACKEND_ROOT/releases" "$BACKEND_ROOT/shared" && echo "  -> Created $BACKEND_ROOT/releases and shared"
-            fi
-
-            if [ -d "$FRONTEND_ROOT" ]; then
-              echo "✓ Frontend root directory exists: $FRONTEND_ROOT"
-              ls -ld "$FRONTEND_ROOT"
-            else
-              echo "✗ Frontend root directory NOT found: $FRONTEND_ROOT"
-            fi
-
-            echo ""
-            echo "[4] Production Environment File Check:"
-            if [ -f "$BACKEND_ROOT/shared/backend.env" ]; then
-              echo "✓ $BACKEND_ROOT/shared/backend.env is present"
-            else
-              echo "✗ $BACKEND_ROOT/shared/backend.env is MISSING!"
-              echo "  Action required: Upload or create your production .env file at $BACKEND_ROOT/shared/backend.env before triggering deployment."
-            fi
-
-            echo ""
-            echo "================================================"
-            echo "=== Probe Complete ==="
-            echo "================================================"
+# Read-only check: no deployment, migration, restart or file modification.
