@@ -80,6 +80,10 @@ export function SupportComplaintModal({
     e.preventDefault();
     if (!formData.fullName.trim()) return setError("Full name is required.");
     if (!formData.email.trim()) return setError("Email address is required.");
+    if (!formData.phone.trim()) return setError("Phone number is required.");
+    if (formData.phone.trim().length < 7 || formData.phone.trim().length > 30) {
+      return setError("Please enter a valid phone number (7-30 digits).");
+    }
     if (!formData.subject.trim() || formData.subject.trim().length < 4) {
       return setError("Subject must be at least 4 characters.");
     }
@@ -94,7 +98,7 @@ export function SupportComplaintModal({
       const payload = new FormData();
       payload.append("fullName", formData.fullName.trim());
       payload.append("email", formData.email.trim());
-      if (formData.phone.trim()) payload.append("phone", formData.phone.trim());
+      payload.append("phone", formData.phone.trim());
       payload.append("role", formData.role);
       payload.append("reason", formData.reason);
       payload.append("subject", formData.subject.trim());
@@ -220,23 +224,42 @@ export function SupportComplaintModal({
             </div>
 
             {/* User Info Grid */}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Your Name</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Your Name <span className="text-blue-600">*</span>
+                </label>
                 <input
                   type="text"
+                  required
                   value={formData.fullName}
                   onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                  className="w-full h-10 rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs outline-none"
+                  className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs outline-none focus:border-[#2563eb]"
                 />
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Your Email</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Your Email <span className="text-blue-600">*</span>
+                </label>
                 <input
                   type="email"
+                  required
                   value={formData.email}
                   onChange={(e) => handleFieldChange("email", e.target.value)}
-                  className="w-full h-10 rounded-lg border border-slate-300 bg-slate-50 px-3 text-xs outline-none"
+                  className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs outline-none focus:border-[#2563eb]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Your Phone <span className="text-blue-600">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="+1 555-123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleFieldChange("phone", e.target.value)}
+                  className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-xs outline-none focus:border-[#2563eb]"
                 />
               </div>
             </div>

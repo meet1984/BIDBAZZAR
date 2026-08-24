@@ -145,6 +145,27 @@ export default function BuyerProfilePage() {
     }
   }, []);
 
+  const loadDocuments = useCallback(async () => {
+    try {
+      const [statusRes, docsRes] = await Promise.allSettled([
+        api.get("/verification/status"),
+        api.get("/verification/documents"),
+      ]);
+
+      if (statusRes.status === "fulfilled") {
+        const s = statusRes.value.data.data || statusRes.value.data;
+        setVerificationStatus(s.verificationStatus);
+      }
+
+      if (docsRes.status === "fulfilled") {
+        const d = docsRes.value.data.data || docsRes.value.data;
+        setDocuments(Array.isArray(d) ? d : []);
+      }
+    } catch {
+      // Non-blocking document list update
+    }
+  }, []);
+
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
@@ -316,7 +337,7 @@ export default function BuyerProfilePage() {
         title: "Document Uploaded",
         message: `"${file.name}" has been uploaded successfully.`,
       });
-      await loadProfile();
+      await loadDocuments();
     } catch (err) {
       const msg = errorMessage(err, "Failed to upload document.");
       setDocError(msg);
@@ -332,7 +353,7 @@ export default function BuyerProfilePage() {
     setDocError("");
     try {
       await api.delete(`/verification/documents/${docId}`);
-      setDocuments((d) => d.filter((doc) => doc.id !== docId));
+      await loadDocuments();
       setAlert({
         type: "info",
         title: "Document Deleted",

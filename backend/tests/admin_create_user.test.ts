@@ -74,6 +74,7 @@ describe("Admin Create User API", () => {
         role: "buyer",
         fullName: "New Buyer",
         email: "newbuyer@test.com",
+        phone: "+1234567890",
         password: "password123",
       });
 
@@ -89,6 +90,7 @@ describe("Admin Create User API", () => {
         role: "seller",
         fullName: "New Seller",
         email: "newseller@test.com",
+        phone: "+1234567890",
         password: "password123",
         sellerName: "Best Store",
         sellerType: "business",
@@ -105,6 +107,7 @@ describe("Admin Create User API", () => {
         role: "admin",
         fullName: "Second Admin",
         email: "admin2@test.com",
+        phone: "+1234567890",
         password: "password123",
       });
 

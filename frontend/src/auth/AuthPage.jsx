@@ -706,7 +706,7 @@ function RegistrationForm() {
           accountType: isSeller ? "seller" : "buyer",
           fullName: data.fullName.trim(),
           email: data.email.trim().toLowerCase(),
-          phone: data.phone.trim() || undefined,
+          phone: data.phone.trim(),
           password: data.password,
           sellerName: isSeller ? data.sellerName.trim() : undefined,
           sellerType: isSeller ? data.sellerType : undefined,
@@ -1026,13 +1026,13 @@ function RegistrationForm() {
             htmlFor="phone"
             className="text-[13px] font-semibold text-[#0f172a]"
           >
-            Phone number{" "}
-            <span className="font-normal text-slate-400">(optional)</span>
+            Phone number <span className="text-rose-500 font-bold">*</span>
           </label>
           <input
             id="phone"
             className={inputClass}
             type="tel"
+            required
             value={data.phone}
             onChange={(event) => update("phone", event.target.value)}
             autoComplete="tel"

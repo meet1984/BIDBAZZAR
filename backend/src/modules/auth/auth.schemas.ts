@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 const email = z.string().trim().toLowerCase().email().max(254);
+const phone = z
+  .string()
+  .trim()
+  .min(7, "Phone number must be at least 7 digits.")
+  .max(30, "Keep the phone number within 30 characters.")
+  .regex(/^[+]?[0-9\s\-()]+$/, "Please enter a valid phone number.");
 const password = z
   .string()
   .min(8)
@@ -13,7 +19,7 @@ export const buyerRegistrationSchema = z.object({
   accountType: z.literal("buyer").default("buyer"),
   fullName: z.string().trim().min(1).max(100),
   email,
-  phone: z.string().trim().max(30).optional(),
+  phone,
   password,
   acceptedTerms: z.literal(true),
   marketingConsent: z.boolean().default(false),
@@ -23,7 +29,7 @@ export const sellerRegistrationSchema = z.object({
   accountType: z.literal("seller").default("seller"),
   fullName: z.string().trim().min(1).max(100),
   email,
-  phone: z.string().trim().max(30).optional(),
+  phone,
   password,
   sellerName: z.string().trim().min(1, "Seller name is required").max(120),
   sellerType: z.enum(["individual", "business", "distributor"]),
@@ -37,7 +43,7 @@ export const registrationSchema = z
     accountType: z.enum(["buyer", "seller"]).optional(),
     fullName: z.string().trim().min(1).max(100),
     email,
-    phone: z.string().trim().max(30).optional(),
+    phone,
     password,
     sellerName: z.string().trim().max(120).optional(),
     sellerType: z.enum(["individual", "business", "distributor"]).optional(),

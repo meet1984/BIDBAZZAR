@@ -31,7 +31,12 @@ export const adminCreateUserSchema = z
     accountType: z.enum(["admin", "admin_employee", "buyer", "seller"]).optional(),
     fullName: z.string().trim().min(1).max(100),
     email: z.string().trim().toLowerCase().email().max(254),
-    phone: z.string().trim().max(30).optional(),
+    phone: z
+      .string()
+      .trim()
+      .min(7, "Phone number must be at least 7 digits.")
+      .max(30, "Keep the phone number within 30 characters.")
+      .regex(/^[+]?[0-9\s\-()]+$/, "Please enter a valid phone number."),
     password: z.string().min(8).max(72).refine((value) => /[A-Za-z]/.test(value) && /\d/.test(value), {
       message: "Password must contain at least one letter and one number.",
     }),

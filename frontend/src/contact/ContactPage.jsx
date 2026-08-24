@@ -181,6 +181,13 @@ function validateForm(data, attachment) {
   } else if (!emailPattern.test(data.email.trim())) {
     errors.email = "Enter a valid email address, such as name@example.com.";
   }
+  if (!data.phone.trim()) {
+    errors.phone = "Enter your phone number.";
+  } else if (data.phone.trim().length < 7 || data.phone.trim().length > 30) {
+    errors.phone = "Enter a valid phone number (between 7 and 30 digits).";
+  } else if (!/^[+]?[0-9\s\-()]+$/.test(data.phone.trim())) {
+    errors.phone = "Enter a valid phone number format.";
+  }
   if (!data.role)
     errors.role =
       "Choose whether you are contacting as a buyer, seller, visitor or other.";
@@ -681,21 +688,18 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <label
-                        htmlFor="phone"
-                        className="text-[12px] font-semibold text-[#1e293b]"
-                      >
-                        Phone number
-                      </label>
-                      <span className="text-[10px] text-[#64748b]">
-                        Optional
-                      </span>
-                    </div>
+                    <label
+                      htmlFor="phone"
+                      className="text-[12px] font-semibold text-[#1e293b]"
+                    >
+                      Phone number
+                      <RequiredMark />
+                    </label>
                     <input
                       id="phone"
                       name="phone"
                       type="tel"
+                      required
                       autoComplete="tel"
                       disabled={isSubmitting}
                       value={formData.phone}
@@ -704,6 +708,7 @@ export default function ContactPage() {
                       }
                       className={fieldClass}
                     />
+                    <FieldError id="phone-error" message={errors.phone} />
                   </div>
 
                   <div>

@@ -60,8 +60,12 @@ export function validateRegistration(data) {
     errors.email = "Enter a valid email address, such as name@example.com.";
   }
 
-  if (data.phone.trim().length > 30) {
-    errors.phone = "Keep the phone number within 30 characters.";
+  if (!data.phone || !data.phone.trim()) {
+    errors.phone = "Enter your phone number.";
+  } else if (data.phone.trim().length < 7 || data.phone.trim().length > 30) {
+    errors.phone = "Enter a valid phone number (between 7 and 30 digits).";
+  } else if (!/^[+]?[0-9\s\-()]+$/.test(data.phone.trim())) {
+    errors.phone = "Enter a valid phone number format.";
   }
 
   if (!data.password) {

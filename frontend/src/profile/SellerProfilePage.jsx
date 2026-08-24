@@ -150,6 +150,26 @@ export default function SellerProfilePage() {
     }
   }, []);
 
+  const loadDocuments = useCallback(async () => {
+    try {
+      const [statusRes, docsRes] = await Promise.allSettled([
+        api.get("/verification/status"),
+        api.get("/verification/documents"),
+      ]);
+
+      if (statusRes.status === "fulfilled") {
+        const vs = statusRes.value.data.data || statusRes.value.data;
+        setVerificationStatus(vs.verificationStatus);
+      }
+
+      if (docsRes.status === "fulfilled") {
+        setDocuments(docsRes.value.data.data || []);
+      }
+    } catch {
+      // Non-blocking document list update
+    }
+  }, []);
+
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
@@ -310,7 +330,7 @@ export default function SellerProfilePage() {
       await api.post("/verification/documents", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      await loadProfile();
+      await loadDocuments();
     } catch (err) {
       setDocError(errorMessage(err, "Failed to upload document."));
     } finally {
@@ -324,7 +344,7 @@ export default function SellerProfilePage() {
     setDocError("");
     try {
       await api.delete(`/verification/documents/${docId}`);
-      setDocuments((d) => d.filter((doc) => doc.id !== docId));
+      await loadDocuments();
     } catch (err) {
       setDocError(errorMessage(err));
     }
