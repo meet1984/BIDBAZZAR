@@ -44,7 +44,7 @@ describe("Phase 2 Account Type Isolation & Protection", () => {
     });
 
     const sellerRouteRes = await request(app)
-      .get("/api/dashboard/seller")
+      .get("/api/seller/profile")
       .set("Authorization", `Bearer ${buyerToken}`);
 
     expect(sellerRouteRes.status).toBe(403);
@@ -58,7 +58,7 @@ describe("Phase 2 Account Type Isolation & Protection", () => {
     });
 
     const buyerRouteRes = await request(app)
-      .get("/api/dashboard/buyer")
+      .get("/api/buyer/profile")
       .set("Authorization", `Bearer ${sellerToken}`);
 
     expect(buyerRouteRes.status).toBe(403);

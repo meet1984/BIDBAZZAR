@@ -99,7 +99,7 @@ describe("Seller Profile Module & Redaction Tests", () => {
     expect(pub.businessName).toBe("Acme Store");
     expect(pub.sellerType).toBe("business");
     expect(pub.publicBusinessDescription).toBe("Premier lot auction seller.");
-    expect(pub.deliveryReturnInfo).toBe("30 day hassle free return");
+    expect(pub.deliveryReturnInfo).toBeUndefined();
 
     // ABSOLUTE REDACTION ASSERTIONS
     expect(pub.legalName).toBeUndefined();

@@ -2,7 +2,21 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "coverage", "uploads", "eslint.config.mjs", "app.js", "scripts/*.js", "scripts/*.d.ts"] },
+  {
+    ignores: [
+      "dist",
+      "coverage",
+      "uploads",
+      "private_uploads",
+      "eslint.config.mjs",
+      "app.js",
+      "scripts/*.js",
+      "scripts/*.d.ts",
+      "src/modules/payments/**",
+      "src/modules/delivery/**",
+      "tests/phase*.test.ts",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

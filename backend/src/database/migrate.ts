@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import mysql, { type Connection, type RowDataPacket } from "mysql2/promise";
+import mysql, { type RowDataPacket } from "mysql2/promise";
 import { env } from "../config/env.js";
 import { logger } from "../shared/logger.js";
 import { validateDatabaseSchema } from "./schema-validator.js";

@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import type { RowDataPacket } from "mysql2/promise";
 import { env, isAllowedOrigin } from "./config/env.js";
 import { pool } from "./database/pool.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
@@ -73,7 +74,7 @@ export function createApp() {
     let schemaStatus = "ok";
     try {
       await pool.query("SELECT 1");
-      const [schemaRows] = await pool.query<import("mysql2/promise").RowDataPacket[]>(`
+      const [schemaRows] = await pool.query<RowDataPacket[]>(`
         SELECT COUNT(*) AS total
         FROM information_schema.tables
         WHERE table_schema = DATABASE()
