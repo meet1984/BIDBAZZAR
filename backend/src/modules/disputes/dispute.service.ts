@@ -10,7 +10,7 @@ import type { DisputeQueryInput, OpenDisputeInput, ResolveDisputeInput } from ".
 import type { DisputeRecord } from "../../types/database.types.js";
 
 export class DisputeService {
-  constructor(private readonly repository: DisputeRepository) {}
+  constructor(private readonly repository: DisputeRepository) { }
 
   /**
    * Opens a dispute on an order by buyer or seller.

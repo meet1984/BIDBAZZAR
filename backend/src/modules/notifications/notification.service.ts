@@ -10,7 +10,7 @@ import type {
 } from "../../types/database.types.js";
 
 export class NotificationService {
-  constructor(private readonly repository: NotificationRepository) {}
+  constructor(private readonly repository: NotificationRepository) { }
 
   /**
    * Unified notification dispatcher:

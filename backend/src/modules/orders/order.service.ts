@@ -11,7 +11,7 @@ import { orderRepository, type OrderRepository } from "./order.repository.js";
 import type { CreateOrderParams, ListOrdersFilter, OrderDetails, OrderRecord } from "./order.types.js";
 
 export class OrderService {
-  constructor(private readonly repository: OrderRepository) {}
+  constructor(private readonly repository: OrderRepository) { }
 
   /**
    * Idempotently creates an order record from a confirmed single-item negotiated offer.

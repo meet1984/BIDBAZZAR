@@ -56,7 +56,6 @@ function mockOffer(overrides: Partial<OfferRecord> = {}): OfferRecord {
     currency: "INR",
     buyerMessage: "Interested in quick deal",
     sellerMessage: null,
-    preferredFulfilment: "Pickup",
     offerExpiry: new Date(Date.now() + 86400000),
     status: "submitted",
     version: 1,
@@ -69,7 +68,7 @@ function mockOffer(overrides: Partial<OfferRecord> = {}): OfferRecord {
 describe("Buyer Offer API & Business Rules (Phase 2)", () => {
   it("allows a buyer to offer below, at, or above asking price without minimum-beat restrictions", async () => {
     vi.spyOn(listingRepository, "findById").mockResolvedValue(mockListing({ askingPrice: 500000 }));
-    
+
     let createdOfferAmount = 0;
     const mockRepo = {
       findActiveByListingAndBuyer: vi.fn().mockResolvedValue(null),
@@ -144,7 +143,7 @@ describe("Buyer Offer API & Business Rules (Phase 2)", () => {
 
   it("prevents buyers from viewing or accessing other buyers' exact offer amounts via buyer list endpoint", async () => {
     const buyer88Offer = { ...mockOffer({ id: 1, buyerId: 88, offeredAmount: 450000 }), listingTitle: "Gen", listingReference: "LOT-1", publicSlug: "gen", askingPrice: 500000, listingStatus: "open" };
-    
+
     const mockRepo = {
       listByBuyer: vi.fn().mockImplementation((buyerId) => {
         if (buyerId === 88) return Promise.resolve([buyer88Offer]);
@@ -164,7 +163,7 @@ describe("Buyer Offer API & Business Rules (Phase 2)", () => {
 
   it("allows a buyer to submit a brand new offer after withdrawing a previous offer", async () => {
     vi.spyOn(listingRepository, "findById").mockResolvedValue(mockListing());
-    
+
     let createdOfferAmount = 0;
     const mockRepo = {
       // Returned null because withdrawn offers are not active

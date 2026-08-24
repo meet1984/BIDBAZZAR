@@ -18,7 +18,7 @@ import type {
 } from "./review.types.js";
 
 export class ReviewService {
-  constructor(private readonly repository: ReviewRepository) {}
+  constructor(private readonly repository: ReviewRepository) { }
 
   /**
    * Buyer submits a review and category ratings for the seller.

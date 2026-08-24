@@ -79,10 +79,10 @@ export function createApp() {
         WHERE table_schema = DATABASE()
           AND table_name IN (
             'accounts', 'seller_profiles', 'listings', 'listing_images',
-            'listing_watchlists', 'multi_unit_allocations'
+            'listing_watchlists', 'multi_unit_allocations', 'offers', 'multi_unit_offers'
           )
       `);
-      schemaStatus = Number(schemaRows[0]?.total ?? 0) === 6 ? "ok" : "error";
+      schemaStatus = Number(schemaRows[0]?.total ?? 0) === 8 ? "ok" : "error";
     } catch {
       dbStatus = "error";
       schemaStatus = "unknown";

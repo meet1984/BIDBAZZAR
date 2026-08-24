@@ -1,5 +1,17 @@
-# Database migrations
+# Database Migrations
 
-Numbered `.sql` files define forward-only MySQL schema changes and the runner records each completed filename in `schema_migrations`. MySQL DDL commits implicitly, so production changes require a tested backup and restore plan. Migration 018 executes a database-enforced conflict guard before its first persistent DDL; its diagnostic queries identify records that must be resolved manually. The `rollback/` files are operator guidance, not automatic rollback scripts. Never rewrite a migration already applied to an environment.
+`full_database.sql` is the **single consolidated source of truth** for the BidMyLot production database schema.
 
-Build the backend before running production database commands. `npm run db:migrate:dry` uses the compiled runner, connects without modifying the database, and reports applied and pending migrations. `npm run db:migrate` applies only pending migrations. Run `npm run db:verify-schema` afterwards to verify the runtime tables and columns required by listings, watchlists, profiles, multi-unit allocations, and direct-deal orders. These production commands do not require the development-only `tsx` package.
+- Target Database: MySQL 8.0+ (cPanel / MilesWeb compatible)
+- Charset: `utf8mb4`
+- Collation: `utf8mb4_unicode_ci`
+- Storage Engine: `InnoDB`
+
+Historical step-by-step migrations (`001` through `021`) have been archived to the `legacy/` directory for historical reference and are ignored by the application migration runner.
+
+## Commands
+
+- `npm run db:migrate:dry`: Inspects the database and validates the schema against `full_database.sql` without making changes.
+- `npm run db:migrate`: Applies `full_database.sql` idempotently using safe `CREATE TABLE IF NOT EXISTS` and `INSERT ... ON DUPLICATE KEY UPDATE` statements, then validates the schema.
+- `npm run db:verify-schema`: Verifies that all 33 required tables and operational columns exist in the connected database.
+- `node dist/server.js`: Automatically ensures the database connection is alive, applies `full_database.sql`, validates the schema, starts background sweepers, and launches the HTTP API server.

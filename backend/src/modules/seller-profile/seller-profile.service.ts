@@ -15,7 +15,7 @@ export interface PublicSellerProfileDTO {
 }
 
 export class SellerProfileService {
-  constructor(private readonly repository: SellerProfileRepository) {}
+  constructor(private readonly repository: SellerProfileRepository) { }
 
   async getOwnProfile(accountId: number): Promise<SellerProfileRecord> {
     const profile = await this.repository.findByAccountId(accountId);
