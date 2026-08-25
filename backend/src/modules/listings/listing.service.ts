@@ -10,6 +10,7 @@ import type {
 import type { FullListingRecord, ListingRepository } from "./listing.repository.js";
 import { listingRepository } from "./listing.repository.js";
 import { listingAuditRepository } from "./listing-audit.repository.js";
+import { sellerProfileRepository } from "../seller-profile/seller-profile.repository.js";
 
 export function publicListingDto(record: FullListingRecord) {
   const images = record.images || [];
@@ -209,7 +210,16 @@ export class ListingService {
     if (!["draft", "changes_requested", "rejected"].includes(record.reviewStatus)) {
       throw new AppError(409, "LISTING_NOT_SUBMITTABLE", "Only draft, rejected, or change-requested listings can be submitted.");
     }
-    await this.repository.publishDirect(id);
+
+    const sellerProfile = await sellerProfileRepository.findByAccountId(sellerId);
+    const isVerified = sellerProfile?.verificationStatus === "verified";
+
+    if (isVerified) {
+      await this.repository.publishApproved(id);
+    } else {
+      await this.repository.publishDirect(id);
+    }
+
     const updated = await this.repository.findOwned(id, sellerId);
     return sellerListingDto(updated!);
   }
@@ -224,7 +234,16 @@ export class ListingService {
       throw new AppError(409, "LISTING_NOT_CONFIRMABLE", "Only listings with requested changes can be resubmitted.");
     }
 
-    const updated = await this.repository.confirmChanges(id);
+    const sellerProfile = await sellerProfileRepository.findByAccountId(sellerId);
+    const isVerified = sellerProfile?.verificationStatus === "verified";
+
+    let updated: boolean;
+    if (isVerified) {
+      updated = await this.repository.confirmApproved(id);
+    } else {
+      updated = await this.repository.confirmChanges(id);
+    }
+
     if (!updated) {
       throw new AppError(
         409,
@@ -261,10 +280,6 @@ export class ListingService {
     const record = await this.repository.findById(id);
     if (!record) {
       throw new AppError(404, "LISTING_NOT_FOUND", "The listing was not found.");
-    }
-
-    if (!["submitted", "under_review"].includes(record.reviewStatus)) {
-      throw new AppError(409, "LISTING_NOT_REVIEWABLE", "Only submitted listings can be reviewed.");
     }
 
     let targetStatus: ListingReviewStatus;

@@ -504,9 +504,26 @@ export class ListingRepository {
     );
   }
 
+  async publishApproved(id: number): Promise<void> {
+    await pool.execute(
+      `UPDATE listings SET review_status = 'approved', review_notes = 'Auto-approved for verified seller', version = version + 1
+       WHERE id = ? AND review_status IN ('draft', 'changes_requested', 'rejected', 'submitted')`,
+      [id],
+    );
+  }
+
   async confirmChanges(id: number): Promise<boolean> {
     const [result] = await pool.execute<ResultSetHeader>(
       `UPDATE listings SET review_status = 'submitted', review_notes = NULL, version = version + 1
+       WHERE id = ? AND review_status = 'changes_requested'`,
+      [id],
+    );
+    return result.affectedRows > 0;
+  }
+
+  async confirmApproved(id: number): Promise<boolean> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `UPDATE listings SET review_status = 'approved', review_notes = 'Auto-approved for verified seller', version = version + 1
        WHERE id = ? AND review_status = 'changes_requested'`,
       [id],
     );
