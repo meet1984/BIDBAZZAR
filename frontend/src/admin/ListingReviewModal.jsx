@@ -106,14 +106,14 @@ export function ListingReviewModal({ listing, onClose, onSuccess }) {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="text-xs font-bold text-slate-700 mb-2">Uploaded Images ({gallery.length})</div>
               {gallery.length === 0 ? (
-                <div className="aspect-16/9 flex items-center justify-center rounded-lg border border-dashed bg-white text-xs text-slate-400">
+                <div className="relative aspect-[16/9] w-full flex items-center justify-center rounded-lg border border-dashed bg-white text-xs text-slate-400">
                   No images uploaded
                 </div>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {gallery.map((img, i) => (
-                    <div key={img.id || i} className="aspect-square rounded-lg overflow-hidden border border-slate-200 bg-white">
-                      <img src={img.imageUrl || img.url} alt={`Gallery ${i + 1}`} className="h-full w-full object-cover" />
+                    <div key={img.id || i} className="relative aspect-square w-full overflow-hidden rounded-lg border border-slate-200 bg-white">
+                      <img src={img.imageUrl || img.url} alt={`Gallery ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />
                     </div>
                   ))}
                 </div>

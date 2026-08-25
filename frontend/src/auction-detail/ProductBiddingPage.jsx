@@ -1105,11 +1105,11 @@ export default function ProductBiddingPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Left Column: Image Gallery */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-4/3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
               <img
                 src={selectedImage || gallery[0]?.url || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
                 alt={listing.title}
-                className="h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
 
               <div className="absolute left-3 top-3 flex flex-wrap gap-2">
@@ -1132,11 +1132,11 @@ export default function ProductBiddingPage() {
                 )}
 
                 {listing.saleMode === "multi_unit_offer" ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                    <Boxes size={14} /> Multi-Unit Offer
+                  <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/80 bg-indigo-50/90 px-3 py-1 text-xs font-semibold text-indigo-700 shadow-sm backdrop-blur-xs">
+                    <Boxes size={14} /> Multi-Unit Lot
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-xs">
                     <Tag size={14} /> Negotiated Offer
                   </span>
                 )}
@@ -1154,7 +1154,7 @@ export default function ProductBiddingPage() {
                     className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${selectedImage === img.url ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-slate-200 opacity-70 hover:opacity-100"
                       }`}
                   >
-                    <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
+                    <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="absolute inset-0 h-full w-full object-cover" />
                   </button>
                 ))}
               </div>

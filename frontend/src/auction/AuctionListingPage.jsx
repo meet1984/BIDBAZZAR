@@ -142,11 +142,11 @@ export function ListingCard({ item, viewMode = "grid" }) {
         }`}
       >
         {/* List Thumbnail */}
-        <div className="relative aspect-4/3 w-full shrink-0 overflow-hidden bg-slate-100 sm:w-72 sm:aspect-auto">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100 sm:w-72 sm:min-h-[220px]">
           <img
             src={item.imageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
             alt={item.title}
-            className={`h-full w-full object-cover transition duration-500 ${
+            className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${
               isClosed
                 ? "grayscale contrast-125 opacity-75 group-hover:grayscale-0 group-hover:opacity-100"
                 : "group-hover:scale-105"
@@ -305,18 +305,18 @@ export function ListingCard({ item, viewMode = "grid" }) {
   // Grid Card
   return (
     <div
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border shadow-xs transition-all duration-300 hover:-translate-y-1 ${
+      className={`group relative flex flex-col h-full overflow-hidden rounded-2xl border shadow-xs transition-all duration-300 hover:-translate-y-1 ${
         isClosed
           ? "border-slate-300 bg-slate-50/90 hover:border-slate-400 hover:shadow-md"
           : "border-slate-200/90 bg-white hover:border-blue-300 hover:shadow-lg"
       }`}
     >
       {/* Thumbnail Area */}
-      <div className="relative aspect-4/3 overflow-hidden bg-slate-100">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
         <img
           src={item.imageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
           alt={item.title}
-          className={`h-full w-full object-cover transition duration-500 ${
+          className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${
             isClosed
               ? "grayscale contrast-125 opacity-75 group-hover:grayscale-0 group-hover:opacity-100"
               : "group-hover:scale-105"
@@ -380,7 +380,7 @@ export function ListingCard({ item, viewMode = "grid" }) {
       </div>
 
       {/* Card Content */}
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col justify-between p-4">
         {/* Category & LOT Ref */}
         <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
           <span className="truncate max-w-[140px]">
@@ -1288,11 +1288,11 @@ export default function AuctionListingPage() {
                   href={`/auctions/${lot.slug || lot.id}`}
                   className="group block overflow-hidden rounded-xl border border-slate-200 bg-white p-2 transition hover:border-blue-300 hover:shadow-xs"
                 >
-                  <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 mb-2">
+                  <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 mb-2">
                     <img
                       src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
                       alt={lot.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                      className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition duration-300"
                     />
                   </div>
                   <p className="text-[11px] font-bold text-slate-900 truncate group-hover:text-blue-600">

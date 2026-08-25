@@ -206,18 +206,18 @@ function AuctionCard({ auction }) {
 
   return (
     <article
-      className={`group overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-1 motion-reduce:transform-none ${isClosed
+      className={`group flex flex-col h-full overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-1 motion-reduce:transform-none ${isClosed
           ? "border-slate-300 bg-slate-50/90 hover:border-slate-400 hover:shadow-md"
           : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-[0_18px_40px_rgba(15,23,42,.08)]"
         }`}
     >
-      <div className="relative h-56 overflow-hidden bg-slate-900">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-900">
         <Image
           src={imageUrl}
           alt={`${auction.title || "Item"} preview`}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className={`object-cover transition duration-500 motion-reduce:transform-none ${isClosed
+          className={`absolute inset-0 h-full w-full object-cover transition duration-500 motion-reduce:transform-none ${isClosed
               ? "grayscale contrast-125 opacity-75 group-hover:grayscale-0 group-hover:opacity-100"
               : "group-hover:scale-[1.04]"
             }`}
@@ -276,74 +276,79 @@ function AuctionCard({ auction }) {
           </span>
         </div>
       </div>
-      <div className="p-5">
-        <div className="flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
-          <span>{categoryName}</span>
-          <span className={`inline-flex items-center gap-1 ${isClosed ? "text-slate-500" : "text-emerald-600"}`}>
-            <BadgeCheck className="h-3.5 w-3.5" /> Admin-reviewed
-          </span>
-        </div>
-        <h3
-          className={`mt-2 min-h-12 text-[17px] font-bold leading-6 tracking-[-0.025em] line-clamp-2 transition-colors ${isClosed
-              ? "text-slate-700 group-hover:text-slate-900"
-              : "text-[#0f172a] group-hover:text-blue-600"
-            }`}
-        >
-          {auction.title}
-        </h3>
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1">
-            <Car className="h-3.5 w-3.5" />
-            {categoryName}
-          </span>
-          <span className={`font-semibold ${isClosed ? "text-slate-500" : "text-slate-600"}`}>Verified Lot</span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 border-y border-slate-200 py-3">
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.08em] text-slate-500">
-              {priceLabel}
-            </p>
-            <p className={`mt-1 text-[15px] font-extrabold ${isClosed ? "text-slate-600" : "text-[#0f172a]"}`}>
-              {formatINR(amount)}
-            </p>
+      <div className="flex flex-1 flex-col justify-between p-5">
+        <div>
+          <div className="flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
+            <span className="truncate max-w-[140px]">{categoryName}</span>
+            <span className={`inline-flex shrink-0 items-center gap-1 ${isClosed ? "text-slate-500" : "text-emerald-600"}`}>
+              <BadgeCheck className="h-3.5 w-3.5" /> Admin-reviewed
+            </span>
           </div>
-          <div className="border-l border-slate-200 pl-3 text-right">
-            <p className="text-[9px] uppercase tracking-[0.08em] text-slate-500">
-              {auction.bidCount ?? auction.bids ?? 0} offers
-            </p>
-            <p className="mt-1 text-xs font-bold text-[#0f172a]">
-              {isUpcoming && starts
-                ? `Starts ${formatDateTime(starts)}`
-                : isClosed
-                  ? "Listing closed"
-                  : ends
-                    ? `Ends ${formatDateTime(ends)}`
-                    : "Active"}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <span
-            className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-bold ${isClosed
-                ? "border-slate-300 bg-slate-200 text-slate-700"
-                : "border-blue-100 bg-blue-50 text-[#2563eb]"
+          <h3
+            className={`mt-2 min-h-12 text-[17px] font-bold leading-6 tracking-[-0.025em] line-clamp-2 transition-colors ${isClosed
+                ? "text-slate-700 group-hover:text-slate-900"
+                : "text-[#0f172a] group-hover:text-blue-600"
               }`}
           >
-            {ref}
-          </span>
-          <Link
-            href={`/auctions/${slug}`}
-            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-4 text-xs font-bold transition-colors ${isClosed
-                ? "border-slate-300 bg-slate-800 text-slate-200 hover:bg-slate-900"
-                : isUpcoming
-                  ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  : "border-slate-300 text-[#0f172a] hover:border-[#2563eb] hover:text-[#2563eb]"
-              }`}
-          >
-            {isClosed ? "View Archive" : isUpcoming ? "Preview Lot" : "View Listing"} <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+            {auction.title}
+          </h3>
+          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+            <span className="flex items-center gap-1 truncate">
+              <Car className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{categoryName}</span>
+            </span>
+            <span className={`shrink-0 font-semibold ${isClosed ? "text-slate-500" : "text-slate-600"}`}>Verified Lot</span>
+          </div>
         </div>
-        {watchError ? <p className="mt-2 text-[10px] text-red-700">{watchError}</p> : null}
+
+        <div>
+          <div className="mt-4 grid grid-cols-2 gap-3 border-y border-slate-200 py-3">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.08em] text-slate-500">
+                {priceLabel}
+              </p>
+              <p className={`mt-1 text-[15px] font-extrabold ${isClosed ? "text-slate-600" : "text-[#0f172a]"}`}>
+                {formatINR(amount)}
+              </p>
+            </div>
+            <div className="border-l border-slate-200 pl-3 text-right">
+              <p className="text-[9px] uppercase tracking-[0.08em] text-slate-500">
+                {auction.bidCount ?? auction.bids ?? 0} offers
+              </p>
+              <p className="mt-1 text-xs font-bold text-[#0f172a] truncate">
+                {isUpcoming && starts
+                  ? `Starts ${formatDateTime(starts)}`
+                  : isClosed
+                    ? "Listing closed"
+                    : ends
+                      ? `Ends ${formatDateTime(ends)}`
+                      : "Active"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span
+              className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-bold ${isClosed
+                  ? "border-slate-300 bg-slate-200 text-slate-700"
+                  : "border-blue-100 bg-blue-50 text-[#2563eb]"
+                }`}
+            >
+              {ref}
+            </span>
+            <Link
+              href={`/auctions/${slug}`}
+              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-4 text-xs font-bold transition-colors ${isClosed
+                  ? "border-slate-300 bg-slate-800 text-slate-200 hover:bg-slate-900"
+                  : isUpcoming
+                    ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    : "border-slate-300 text-[#0f172a] hover:border-[#2563eb] hover:text-[#2563eb]"
+                }`}
+            >
+              {isClosed ? "View Archive" : isUpcoming ? "Preview Lot" : "View Listing"} <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          {watchError ? <p className="mt-2 text-[10px] text-red-700">{watchError}</p> : null}
+        </div>
       </div>
     </article>
   );
@@ -1111,11 +1116,11 @@ function RecentlyViewedSection() {
               href={`/auctions/${lot.slug || lot.id}`}
               className="group block overflow-hidden rounded-xl border border-slate-200 bg-[#f8fafc] p-2.5 transition hover:-translate-y-1 hover:border-[#2563eb] hover:bg-white hover:shadow-md"
             >
-              <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-200 mb-2">
+              <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-slate-200 mb-2">
                 <img
                   src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
                   alt={lot.title}
-                  className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                  className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition duration-300"
                 />
               </div>
               <p className="text-xs font-bold text-[#0f172a] truncate group-hover:text-[#2563eb]">

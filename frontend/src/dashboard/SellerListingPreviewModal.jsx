@@ -86,12 +86,12 @@ export function SellerListingPreviewModal({ listing, onClose, onEdit }) {
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-12">
           {/* Left Column: Image Gallery */}
           <div className="md:col-span-6 space-y-3">
-            <div className="aspect-4/3 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
+            <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
               {images.length > 0 ? (
                 <img
                   src={images[selectedImage]?.imageUrl || images[selectedImage]?.url}
                   alt={listing.title}
-                  className="h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               ) : (
                 <div className="text-xs text-slate-400 flex flex-col items-center gap-2">
@@ -107,10 +107,10 @@ export function SellerListingPreviewModal({ listing, onClose, onEdit }) {
                     key={img.id || idx}
                     type="button"
                     onClick={() => setSelectedImage(idx)}
-                    className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition ${selectedImage === idx ? "border-[#2563eb]" : "border-transparent opacity-70"
+                    className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition ${selectedImage === idx ? "border-[#2563eb]" : "border-transparent opacity-70"
                       }`}
                   >
-                    <img src={img.imageUrl || img.url} alt="" className="h-full w-full object-cover" />
+                    <img src={img.imageUrl || img.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   </button>
                 ))}
               </div>

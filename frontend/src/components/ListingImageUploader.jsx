@@ -187,7 +187,7 @@ export default function ListingImageUploader({
             <img
               src={img.imageUrl || img.url}
               alt={`Listing thumbnail ${idx + 1}`}
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
             />
 
             {/* Primary badge */}

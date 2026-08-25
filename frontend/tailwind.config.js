@@ -3,6 +3,16 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      aspectRatio: {
+        auto: "auto",
+        square: "1 / 1",
+        video: "16 / 9",
+        "4/3": "4 / 3",
+        "3/2": "3 / 2",
+        "16/9": "16 / 9",
+        "16/10": "16 / 10",
+        "21/9": "21 / 9",
+      },
       colors: {
         slate: {
           dark: "#0F172A",
