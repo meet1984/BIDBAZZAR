@@ -66,6 +66,10 @@ export function createApp() {
       fallthrough: false,
       index: false,
       dotfiles: "deny",
+      maxAge: "1d",
+      setHeaders: (res) => {
+        res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+      },
     }),
   );
 

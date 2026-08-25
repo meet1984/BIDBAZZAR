@@ -85,11 +85,10 @@ function LockedBiddingCard({ listing, timing }) {
         type="button"
         disabled={saving}
         onClick={handleToggleWatch}
-        className={`w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs ${
-          watched
+        className={`w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs ${watched
             ? "bg-slate-900 text-white hover:bg-slate-800"
             : "bg-[#2563eb] text-white hover:bg-blue-700"
-        }`}
+          }`}
       >
         <Heart size={15} fill={watched ? "currentColor" : "none"} />
         {watched ? "Saved in Watchlist (Reminder Active)" : "Remind Me When Bidding Opens"}
@@ -260,15 +259,14 @@ function BuyerOfferCard({ listing, timing }) {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <span className="text-xs font-bold text-slate-500">Your Private Offer</span>
           <span
-            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${
-              isConfirmed
+            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
                 ? "bg-emerald-100 text-emerald-800"
                 : isPendingConfirm
                   ? "bg-amber-100 text-amber-900 border border-amber-300"
                   : isCountered
                     ? "bg-purple-100 text-purple-900"
                     : "bg-slate-100 text-slate-700"
-            }`}
+              }`}
           >
             {existingOffer.status.replace(/_/g, " ")}
           </span>
@@ -681,15 +679,14 @@ function MultiUnitOfferCard({ listing, timing }) {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <span className="text-xs font-bold text-slate-500">Your Active Multi-unit Offer</span>
           <span
-            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${
-              isConfirmed
+            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
                 ? "bg-emerald-100 text-emerald-800"
                 : isReserved
                   ? "bg-amber-100 text-amber-900 border border-amber-300"
                   : isCountered
                     ? "bg-purple-100 text-purple-900"
                     : "bg-slate-100 text-slate-700"
-            }`}
+              }`}
           >
             {existingOffer.status.replace(/_/g, " ")}
           </span>
@@ -990,6 +987,32 @@ function MultiUnitOfferCard({ listing, timing }) {
 }
 
 
+function saveRecentlyViewed(item) {
+  if (!item || !item.id) return;
+  try {
+    const raw = localStorage.getItem("bidmylot_recently_viewed");
+    let list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) list = [];
+    list = list.filter((x) => x.id !== item.id);
+    const entry = {
+      id: item.id,
+      slug: item.publicSlug || item.slug || String(item.id),
+      title: item.title,
+      imageUrl: item.primaryImageUrl || item.imageUrl || item.thumbnailUrl || (Array.isArray(item.images) && item.images[0]?.imageUrl) || "",
+      askingPrice: item.askingPrice ?? item.startingPrice ?? item.currentBid ?? 0,
+      status: item.status || "live",
+      condition: item.condition || "new",
+      categoryName: item.category?.name || item.categoryName || "General",
+      listingReference: item.listingReference || `LOT-${item.id}`,
+    };
+    list.unshift(entry);
+    list = list.slice(0, 8);
+    localStorage.setItem("bidmylot_recently_viewed", JSON.stringify(list));
+  } catch {
+    // Ignore storage write issues
+  }
+}
+
 export default function ProductBiddingPage() {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1009,6 +1032,7 @@ export default function ProductBiddingPage() {
         setListing(item);
         const firstImg = item?.images?.[0]?.imageUrl || item?.imageUrl || item?.thumbnailUrl || "";
         setSelectedImage(firstImg);
+        if (item) saveRecentlyViewed(item);
       })
       .catch((err) => {
         setError(err?.response?.data?.message || "Listing not found.");
@@ -1127,9 +1151,8 @@ export default function ProductBiddingPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedImage(img.url)}
-                    className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                      selectedImage === img.url ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-slate-200 opacity-70 hover:opacity-100"
-                    }`}
+                    className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${selectedImage === img.url ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-slate-200 opacity-70 hover:opacity-100"
+                      }`}
                   >
                     <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="h-full w-full object-cover" />
                   </button>
@@ -1199,26 +1222,23 @@ export default function ProductBiddingPage() {
                 </div>
               ) : timing.isLive ? (
                 <div
-                  className={`rounded-xl border p-4 shadow-2xs ${
-                    timing.isEndingSoon
+                  className={`rounded-xl border p-4 shadow-2xs ${timing.isEndingSoon
                       ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/70"
                       : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span
-                        className={`grid h-9 w-9 place-items-center rounded-xl text-white shadow-xs ${
-                          timing.isEndingSoon ? "bg-amber-600" : "bg-emerald-600"
-                        }`}
+                        className={`grid h-9 w-9 place-items-center rounded-xl text-white shadow-xs ${timing.isEndingSoon ? "bg-amber-600" : "bg-emerald-600"
+                          }`}
                       >
                         <Clock size={18} />
                       </span>
                       <div>
                         <span
-                          className={`text-[11px] font-extrabold uppercase tracking-wider block ${
-                            timing.isEndingSoon ? "text-amber-800" : "text-emerald-800"
-                          }`}
+                          className={`text-[11px] font-extrabold uppercase tracking-wider block ${timing.isEndingSoon ? "text-amber-800" : "text-emerald-800"
+                            }`}
                         >
                           {timing.isEndingSoon ? "Ending Soon" : "Live Auction Active"}
                         </span>
@@ -1229,16 +1249,14 @@ export default function ProductBiddingPage() {
                     </div>
                     <div className="text-right">
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wider block ${
-                          timing.isEndingSoon ? "text-amber-700" : "text-emerald-700"
-                        }`}
+                        className={`text-[10px] font-bold uppercase tracking-wider block ${timing.isEndingSoon ? "text-amber-700" : "text-emerald-700"
+                          }`}
                       >
                         Time remaining
                       </span>
                       <span
-                        className={`font-mono text-base font-black ${
-                          timing.isEndingSoon ? "text-amber-950" : "text-emerald-950"
-                        }`}
+                        className={`font-mono text-base font-black ${timing.isEndingSoon ? "text-amber-950" : "text-emerald-950"
+                          }`}
                       >
                         {timing.formattedTime}
                       </span>

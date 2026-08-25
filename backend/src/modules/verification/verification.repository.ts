@@ -191,6 +191,22 @@ export class VerificationRepository {
         [newStatus, reason || null, newStatus, now, newStatus, now, targetAccountId],
       );
 
+      if (newStatus === "suspended") {
+        await connection.execute(
+          "UPDATE accounts SET status = 'suspended' WHERE id = ?",
+          [targetAccountId],
+        );
+        await connection.execute(
+          "UPDATE refresh_tokens SET revoked_at = UTC_TIMESTAMP() WHERE account_id = ? AND revoked_at IS NULL",
+          [targetAccountId],
+        );
+      } else if (newStatus === "verified" || newStatus === "changes_requested") {
+        await connection.execute(
+          "UPDATE accounts SET status = 'active' WHERE id = ?",
+          [targetAccountId],
+        );
+      }
+
       await connection.execute(
         `INSERT INTO verification_decisions (account_id, account_type, reviewer_account_id, action, reason)
          VALUES (?, ?, ?, ?, ?)`,

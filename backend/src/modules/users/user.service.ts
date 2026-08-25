@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { isDuplicateEntry } from "../../database/pool.js";
 import { AppError } from "../../shared/AppError.js";
 import type { AccountType } from "../../shared/tokens.js";
 import { authRepository } from "../auth/auth.repository.js";
@@ -21,9 +22,21 @@ export class UserService {
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
-    const userId = await this.repository.createUser(input, passwordHash);
+    let userId: number;
+    try {
+      userId = await this.repository.createUser(input, passwordHash);
+    } catch (error) {
+      if (isDuplicateEntry(error)) {
+        throw new AppError(409, "EMAIL_IN_USE", "An account with this email address already exists.");
+      }
+      throw error;
+    }
+
     const account = await authRepository.findAccountById(userId);
-    return publicUser(account!);
+    if (!account) {
+      throw new AppError(500, "USER_CREATION_FAILED", "Failed to retrieve the newly created user account.");
+    }
+    return publicUser(account);
   }
 
   async updateStatus(currentAdminId: number, id: number, input: UserStatusInput) {

@@ -3,7 +3,7 @@ import { Bell, LogOut, Menu, X } from "lucide-react";
 import Link from "./Link";
 import Brand from "./Brand";
 import { useAuth } from "../auth/AuthContext";
-import api from "../lib/api";
+import { useNotificationCount } from "../hooks/useNotificationCount";
 
 const NAVIGATION = [
   ["Home", "/"],
@@ -27,30 +27,7 @@ function isNavActive(label, href) {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    let mounted = true;
-    if (!user) return;
-
-    const fetchUnread = async () => {
-      try {
-        const { data } = await api.get("/notifications?limit=1");
-        if (mounted && typeof data?.unreadCount === "number") {
-          setUnreadCount(data.unreadCount);
-        }
-      } catch {
-        // Silently ignore notification polling errors
-      }
-    };
-
-    void fetchUnread();
-    const interval = setInterval(fetchUnread, 30_000);
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [user]);
+  const { unreadCount } = useNotificationCount();
 
   const signOut = async () => {
     await logout();

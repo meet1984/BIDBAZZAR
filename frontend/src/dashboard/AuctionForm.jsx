@@ -4,6 +4,7 @@ import {
   LoaderCircle,
   Save,
   Send,
+  Sparkles,
   X,
 } from "lucide-react";
 import api from "../lib/api";
@@ -104,11 +105,82 @@ export default function AuctionForm({ listing, auction, onClose, onSuccess, isAd
   });
 
 
+  const draftKey = !isAdministrator ? `bidmylot_seller_draft_${targetListing?.id || "new"}` : null;
+  const [savedDraft, setSavedDraft] = useState(null);
+
   const [subcategoriesList, setSubcategoriesList] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submittingAction, setSubmittingAction] = useState("");
   const [formError, setFormError] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Check for unsaved draft on mount
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.data && (parsed.data.title || parsed.data.description || parsed.data.askingPrice || parsed.data.askingPricePerUnit)) {
+          setSavedDraft(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [draftKey]);
+
+  // Debounced auto-save draft to sessionStorage
+  useEffect(() => {
+    if (!draftKey || isAdministrator) return;
+    const timer = setTimeout(() => {
+      try {
+        const hasContent = Boolean(
+          data.title?.trim() ||
+          data.description?.trim() ||
+          data.askingPrice ||
+          data.askingPricePerUnit,
+        );
+        if (hasContent) {
+          sessionStorage.setItem(
+            draftKey,
+            JSON.stringify({
+              saleMode,
+              selectedCategoryId,
+              selectedSubcategoryId,
+              data,
+              savedAt: Date.now(),
+            }),
+          );
+        }
+      } catch {
+        // ignore
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [draftKey, isAdministrator, saleMode, selectedCategoryId, selectedSubcategoryId, data]);
+
+  const handleRestoreDraft = () => {
+    if (!savedDraft) return;
+    if (savedDraft.saleMode) setSaleMode(savedDraft.saleMode);
+    if (savedDraft.selectedCategoryId) setSelectedCategoryId(savedDraft.selectedCategoryId);
+    if (savedDraft.selectedSubcategoryId) setSelectedSubcategoryId(savedDraft.selectedSubcategoryId);
+    if (savedDraft.data) {
+      setData((prev) => ({ ...prev, ...savedDraft.data }));
+    }
+    setSavedDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    if (draftKey) {
+      try {
+        sessionStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+    }
+    setSavedDraft(null);
+  };
 
   // Populate categories fallback selection if not set
   useEffect(() => {
@@ -272,6 +344,14 @@ export default function AuctionForm({ listing, auction, onClose, onSuccess, isAd
         savedListing = subRes.data?.listing;
       }
 
+      if (draftKey) {
+        try {
+          sessionStorage.removeItem(draftKey);
+        } catch {
+          // ignore
+        }
+      }
+
       if (onSuccess) onSuccess(savedListing);
       if (onClose) onClose();
     } catch (err) {
@@ -303,6 +383,34 @@ export default function AuctionForm({ listing, auction, onClose, onSuccess, isAd
             <X size={20} />
           </button>
         </div>
+
+        {/* Unsaved Draft Banner */}
+        {savedDraft && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-xs text-amber-900 shrink-0">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-amber-600 shrink-0" />
+              <span>
+                Unsaved draft from previous session detected ({savedDraft.savedAt ? new Date(savedDraft.savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "earlier"}).
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRestoreDraft}
+                className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-amber-700 transition shadow-2xs"
+              >
+                Restore Draft
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 transition"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Sticky Sale Mode Selector Bar */}
         <div className="border-b border-slate-200/80 bg-slate-50/90 px-6 py-3.5 shrink-0">

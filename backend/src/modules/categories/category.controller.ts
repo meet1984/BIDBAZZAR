@@ -15,11 +15,13 @@ export const categoryController = {
   async listPublic(request: Request, response: Response) {
     const query = request.query as unknown as PublicCategoryQuery;
     const items = await categoryService.listPublic(query.withSubcategories);
+    response.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=86400");
     response.json({ items });
   },
 
   async publicDetail(request: Request, response: Response) {
     const category = await categoryService.publicDetail(String(request.params.identifier));
+    response.setHeader("Cache-Control", "public, max-age=600, stale-while-revalidate=86400");
     response.json({ category });
   },
 

@@ -63,10 +63,17 @@ export class NotificationRepository {
 
   async markAsRead(id: number, recipientAccountId: number): Promise<boolean> {
     const [result] = await pool.execute<ResultSetHeader>(
-      "UPDATE notifications SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE id = ? AND recipient_account_id = ?",
+      "UPDATE notifications SET is_read = 1, read_at = COALESCE(read_at, CURRENT_TIMESTAMP) WHERE id = ? AND recipient_account_id = ?",
       [id, recipientAccountId],
     );
-    return result.affectedRows > 0;
+    if (result.affectedRows > 0) {
+      return true;
+    }
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      "SELECT id FROM notifications WHERE id = ? AND recipient_account_id = ?",
+      [id, recipientAccountId],
+    );
+    return rows.length > 0;
   }
 
   async markAllAsRead(recipientAccountId: number): Promise<number> {

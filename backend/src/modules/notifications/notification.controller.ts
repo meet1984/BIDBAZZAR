@@ -20,15 +20,15 @@ export const listNotificationsHandler = asyncHandler(async (req: Request, res: R
 
 export const markNotificationReadHandler = asyncHandler(async (req: Request, res: Response) => {
   const notificationId = Number(req.params.id);
-  if (!notificationId || Number.isNaN(notificationId)) {
+  if (!notificationId || Number.isNaN(notificationId) || notificationId <= 0) {
     throw new AppError(400, "INVALID_NOTIFICATION_ID", "Invalid notification ID.");
   }
 
   const accountId = req.auth!.id;
-  const updated = await notificationService.markAsRead(notificationId, accountId);
+  const found = await notificationService.markAsRead(notificationId, accountId);
 
-  if (!updated) {
-    throw new AppError(404, "NOTIFICATION_NOT_FOUND", "Notification not found or already read.");
+  if (!found) {
+    throw new AppError(404, "NOTIFICATION_NOT_FOUND", "Notification not found.");
   }
 
   res.status(200).json({

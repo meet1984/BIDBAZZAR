@@ -13,8 +13,9 @@ export const notificationRouter = Router();
 // List in-app notifications for authenticated user
 notificationRouter.get("/", requireAuth, validate(notificationQuerySchema, "query"), listNotificationsHandler);
 
-// Mark a single notification as read
+// Mark a single notification as read (supports PATCH and POST)
 notificationRouter.patch("/:id/read", requireAuth, validate(notificationIdSchema, "params"), markNotificationReadHandler);
+notificationRouter.post("/:id/read", requireAuth, validate(notificationIdSchema, "params"), markNotificationReadHandler);
 
 // Mark all unread notifications as read
 notificationRouter.post("/mark-all-read", requireAuth, markAllNotificationsReadHandler);

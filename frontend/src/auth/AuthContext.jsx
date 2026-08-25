@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import api, { setAccessToken } from "../lib/api";
+import { clearNotificationCache } from "../hooks/useNotificationCount";
 
 const AuthContext = createContext(null);
 let restorePromise = null;
@@ -126,6 +127,22 @@ export function AuthProvider({ children }) {
         } finally {
           sessionStorage.removeItem("bidmylot_tab_session");
           localStorage.removeItem("bidmylot_remember_me");
+          localStorage.removeItem("bidmylot_recent_searches");
+          localStorage.removeItem("bidmylot_recently_viewed");
+          clearNotificationCache();
+
+          // Purge any seller listing drafts in sessionStorage/localStorage
+          try {
+            Object.keys(sessionStorage)
+              .filter((key) => key.startsWith("bidmylot_seller_draft_") || key.startsWith("bidmylot_draft_"))
+              .forEach((key) => sessionStorage.removeItem(key));
+            Object.keys(localStorage)
+              .filter((key) => key.startsWith("bidmylot_seller_draft_") || key.startsWith("bidmylot_draft_"))
+              .forEach((key) => localStorage.removeItem(key));
+          } catch {
+            // ignore
+          }
+
           setAccessToken(null);
           setUser(null);
           restorePromise = null;

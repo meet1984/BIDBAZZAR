@@ -23,7 +23,7 @@ export function publicUser(user: AccountRecord): AccessTokenUser {
     role: user.accountType,
     isBuyer: user.accountType === "buyer",
     isSeller: user.accountType === "seller",
-    isAdmin: user.accountType === "admin",
+    isAdmin: user.accountType === "admin" || user.accountType === "admin_employee",
     email: user.email,
     fullName: user.fullName,
   };

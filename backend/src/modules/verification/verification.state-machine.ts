@@ -35,10 +35,6 @@ export function validateStateTransition(
     return;
   }
 
-  if (currentStatus === "suspended") {
-    throw new AppError(403, "ACCOUNT_SUSPENDED", "Suspended profiles cannot transition to another state without admin reactivation.");
-  }
-
   switch (currentStatus) {
     case "profile_incomplete":
     case "draft":
@@ -73,6 +69,16 @@ export function validateStateTransition(
     case "rejected":
       if (targetStatus !== "draft" && targetStatus !== "submitted") {
         throw new AppError(400, "INVALID_TRANSITION", `Rejected profiles must be corrected and submitted again.`);
+      }
+      break;
+
+    case "suspended":
+      if (
+        targetStatus !== "verified" &&
+        targetStatus !== "changes_requested" &&
+        targetStatus !== "rejected"
+      ) {
+        throw new AppError(400, "INVALID_TRANSITION", `Suspended profiles can only transition to verified, changes_requested, or rejected.`);
       }
       break;
 

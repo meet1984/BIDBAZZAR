@@ -5,6 +5,7 @@ import {
   Check,
   Clock,
   Heart,
+  History,
   LayoutGrid,
   List,
   Lock,
@@ -513,7 +514,68 @@ export default function AuctionListingPage() {
 
   // UI state
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem("bidmylot_view_mode") || "grid";
+    } catch {
+      return "grid";
+    }
+  });
+
+  const [recentSearches, setRecentSearches] = useState(() => {
+    try {
+      const raw = localStorage.getItem("bidmylot_recent_searches");
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bidmylot_recently_viewed");
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list)) setRecentlyViewed(list);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSetViewMode = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("bidmylot_view_mode", mode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSaveSearch = (query) => {
+    const q = (query || "").trim();
+    if (!q || q.length < 2) return;
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== q.toLowerCase());
+      const next = [q, ...filtered].slice(0, 8);
+      try {
+        localStorage.setItem("bidmylot_recent_searches", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem("bidmylot_recent_searches");
+    } catch {
+      // ignore
+    }
+  };
 
   const activeCategoryObj = categories.find(
     (c) => c.slug === selectedCategory || String(c.id) === selectedCategory,
@@ -522,6 +584,9 @@ export default function AuctionListingPage() {
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
+    if (search.trim()) {
+      handleSaveSearch(search.trim());
+    }
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("q", search.trim());
@@ -696,6 +761,11 @@ export default function AuctionListingPage() {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && search.trim()) {
+                    handleSaveSearch(search.trim());
+                  }
+                }}
                 placeholder="Search by lot title, category, location, or LOT reference..."
                 className="w-full rounded-xl border border-slate-200 pl-10 pr-10 py-2.5 text-sm outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/10"
               />
@@ -803,7 +873,7 @@ export default function AuctionListingPage() {
               <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-0.5">
                 <button
                   type="button"
-                  onClick={() => setViewMode("grid")}
+                  onClick={() => handleSetViewMode("grid")}
                   aria-label="Grid View"
                   className={`rounded-lg p-1.5 transition ${
                     viewMode === "grid" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 hover:text-slate-900"
@@ -813,7 +883,7 @@ export default function AuctionListingPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode("list")}
+                  onClick={() => handleSetViewMode("list")}
                   aria-label="List View"
                   className={`rounded-lg p-1.5 transition ${
                     viewMode === "list" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 hover:text-slate-900"
@@ -824,6 +894,35 @@ export default function AuctionListingPage() {
               </div>
             </div>
           </div>
+
+          {/* Recent Searches Chips */}
+          {recentSearches.length > 0 && !search && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs border-t border-slate-100">
+              <span className="text-slate-400 font-medium flex items-center gap-1">
+                <History size={12} /> Recent searches:
+              </span>
+              {recentSearches.map((term, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setSearch(term);
+                    setCurrentPage(1);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition"
+                >
+                  {term}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={handleClearRecentSearches}
+                className="text-[11px] font-semibold text-slate-400 hover:text-red-600 transition ml-1"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {/* Expandable Advanced Filter Panel */}
           {showFiltersDrawer && (
@@ -1155,6 +1254,57 @@ export default function AuctionListingPage() {
               Next
             </button>
           </div>
+        )}
+
+        {/* Recently Viewed Lots Section */}
+        {recentlyViewed.length > 0 && (
+          <section className="mt-16 border-t border-slate-200 pt-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <History size={16} className="text-[#2563eb]" />
+                <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900">
+                  Recently Viewed Lots
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRecentlyViewed([]);
+                  try {
+                    localStorage.removeItem("bidmylot_recently_viewed");
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className="text-[11px] font-semibold text-slate-400 hover:text-red-600 transition"
+              >
+                Clear history
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+              {recentlyViewed.map((lot) => (
+                <a
+                  key={lot.id}
+                  href={`/auctions/${lot.slug || lot.id}`}
+                  className="group block overflow-hidden rounded-xl border border-slate-200 bg-white p-2 transition hover:border-blue-300 hover:shadow-xs"
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 mb-2">
+                    <img
+                      src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+                      alt={lot.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-900 truncate group-hover:text-blue-600">
+                    {lot.title}
+                  </p>
+                  <p className="text-[10px] font-extrabold text-[#2563eb] mt-0.5">
+                    {formatCurrency(lot.askingPrice || 0)}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
         )}
       </main>
 

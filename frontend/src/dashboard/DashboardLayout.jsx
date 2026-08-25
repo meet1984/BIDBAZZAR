@@ -1,41 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Bell, ClipboardList, Gavel, LayoutDashboard, LifeBuoy, LogOut, ShoppingBag, UserCheck, UserRound } from "lucide-react";
 import { Link } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import api from "../lib/api";
+import { useNotificationCount } from "../hooks/useNotificationCount";
 
 const roleIcons = { buyer: ShoppingBag, seller: Gavel, admin: UserRound };
 
 export function DashboardLayout({ role, title, description, children, sidebarExtra, activeTab, onSelectTab }) {
   const { user, logout } = useAuth();
   const RoleIcon = roleIcons[role] || LayoutDashboard;
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    let mounted = true;
-    if (!user) return;
-
-    const fetchUnread = async () => {
-      try {
-        const { data } = await api.get("/notifications?limit=1");
-        if (mounted && typeof data?.unreadCount === "number") {
-          setUnreadCount(data.unreadCount);
-        }
-      } catch {
-        // Silently ignore notification count polling failures
-      }
-    };
-
-    void fetchUnread();
-    const interval = setInterval(fetchUnread, 30_000);
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [user]);
+  const { unreadCount } = useNotificationCount();
 
   const userType = user?.accountType || user?.role || role;
-  const roleText = userType === "admin" || userType === "admin_employee"
+  const roleText = userType === "admin_employee"
+    ? "Admin Employee"
+    : userType === "admin"
     ? "Admin Account"
     : `${userType} account`;
 

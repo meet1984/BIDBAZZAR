@@ -10,6 +10,7 @@ import {
   Gem,
   Headphones,
   Heart,
+  History,
   Home,
   Laptop,
   Lock,
@@ -129,18 +130,16 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`inline-flex min-h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-extrabold uppercase tracking-[0.09em] shadow-xs backdrop-blur-xs ${
-        statusStyles[status] || statusStyles.live
-      }`}
+      className={`inline-flex min-h-7 items-center gap-1.5 rounded-full border px-3 text-[10px] font-extrabold uppercase tracking-[0.09em] shadow-xs backdrop-blur-xs ${statusStyles[status] || statusStyles.live
+        }`}
       aria-label={`Auction status: ${statusCopy[status] || "Live Now"}`}
     >
       {isClosed && <Lock className="h-3 w-3 text-slate-400" aria-hidden="true" />}
       {isUpcoming && <Timer className="h-3 w-3 animate-spin-slow text-blue-600" aria-hidden="true" />}
       {isLive && (
         <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            status === "ending-soon" ? "bg-amber-500 animate-ping" : "bg-emerald-500 animate-pulse"
-          }`}
+          className={`h-1.5 w-1.5 rounded-full ${status === "ending-soon" ? "bg-amber-500 animate-ping" : "bg-emerald-500 animate-pulse"
+            }`}
           aria-hidden="true"
         />
       )}
@@ -207,11 +206,10 @@ function AuctionCard({ auction }) {
 
   return (
     <article
-      className={`group overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-1 motion-reduce:transform-none ${
-        isClosed
+      className={`group overflow-hidden rounded-2xl border transition duration-300 hover:-translate-y-1 motion-reduce:transform-none ${isClosed
           ? "border-slate-300 bg-slate-50/90 hover:border-slate-400 hover:shadow-md"
           : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-[0_18px_40px_rgba(15,23,42,.08)]"
-      }`}
+        }`}
     >
       <div className="relative h-56 overflow-hidden bg-slate-900">
         <Image
@@ -219,19 +217,17 @@ function AuctionCard({ auction }) {
           alt={`${auction.title || "Item"} preview`}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className={`object-cover transition duration-500 motion-reduce:transform-none ${
-            isClosed
+          className={`object-cover transition duration-500 motion-reduce:transform-none ${isClosed
               ? "grayscale contrast-125 opacity-75 group-hover:grayscale-0 group-hover:opacity-100"
               : "group-hover:scale-[1.04]"
-          }`}
+            }`}
           style={{ objectPosition: auction.imagePosition || "center" }}
         />
         <div
-          className={`absolute inset-0 ${
-            isClosed
+          className={`absolute inset-0 ${isClosed
               ? "bg-slate-950/35"
               : "bg-gradient-to-b from-transparent via-transparent to-[#0f172a]/40"
-          }`}
+            }`}
           aria-hidden="true"
         />
         <div className="absolute left-3 top-3">
@@ -247,11 +243,10 @@ function AuctionCard({ auction }) {
               ? `Remove ${auction.title} from watchlist`
               : `Add ${auction.title} to watchlist`
           }
-          className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full border backdrop-blur-xs transition ${
-            watched
+          className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full border backdrop-blur-xs transition ${watched
               ? "border-red-200 bg-white/95 text-red-600 shadow-sm"
               : "border-white/70 bg-white/85 text-slate-600 hover:bg-white hover:text-slate-900"
-          }`}
+            }`}
         >
           <Heart
             className="h-[18px] w-[18px]"
@@ -261,23 +256,21 @@ function AuctionCard({ auction }) {
 
         {/* Live bottom overlay timer */}
         <div
-          className={`absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-1.5 backdrop-blur-xs text-[11px] ${
-            isClosed ? "bg-slate-900/90 text-slate-300 font-mono" : "bg-slate-950/65 text-white"
-          }`}
+          className={`absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-1.5 backdrop-blur-xs text-[11px] ${isClosed ? "bg-slate-900/90 text-slate-300 font-mono" : "bg-slate-950/65 text-white"
+            }`}
         >
           <span className={isClosed ? "text-slate-400 font-medium" : "text-slate-300 font-medium"}>
             {timing.countdownLabel}:
           </span>
           <span
-            className={`font-mono font-bold ${
-              isClosed
+            className={`font-mono font-bold ${isClosed
                 ? "text-slate-300"
                 : isUpcoming
                   ? "text-blue-300"
                   : timing.isEndingSoon
                     ? "text-amber-300"
                     : "text-emerald-300"
-            }`}
+              }`}
           >
             {timing.formattedTime}
           </span>
@@ -291,11 +284,10 @@ function AuctionCard({ auction }) {
           </span>
         </div>
         <h3
-          className={`mt-2 min-h-12 text-[17px] font-bold leading-6 tracking-[-0.025em] line-clamp-2 transition-colors ${
-            isClosed
+          className={`mt-2 min-h-12 text-[17px] font-bold leading-6 tracking-[-0.025em] line-clamp-2 transition-colors ${isClosed
               ? "text-slate-700 group-hover:text-slate-900"
               : "text-[#0f172a] group-hover:text-blue-600"
-          }`}
+            }`}
         >
           {auction.title}
         </h3>
@@ -332,23 +324,21 @@ function AuctionCard({ auction }) {
         </div>
         <div className="mt-4 flex items-center justify-between gap-3">
           <span
-            className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-bold ${
-              isClosed
+            className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-bold ${isClosed
                 ? "border-slate-300 bg-slate-200 text-slate-700"
                 : "border-blue-100 bg-blue-50 text-[#2563eb]"
-            }`}
+              }`}
           >
             {ref}
           </span>
           <Link
             href={`/auctions/${slug}`}
-            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-4 text-xs font-bold transition-colors ${
-              isClosed
+            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-4 text-xs font-bold transition-colors ${isClosed
                 ? "border-slate-300 bg-slate-800 text-slate-200 hover:bg-slate-900"
                 : isUpcoming
                   ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                   : "border-slate-300 text-[#0f172a] hover:border-[#2563eb] hover:text-[#2563eb]"
-            }`}
+              }`}
           >
             {isClosed ? "View Archive" : isUpcoming ? "Preview Lot" : "View Listing"} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -1080,6 +1070,68 @@ function FinalCTA() {
   );
 }
 
+function RecentlyViewedSection() {
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bidmylot_recently_viewed");
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list)) setItems(list);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  if (!items.length) return null;
+
+  return (
+    <section className="border-b border-slate-200 bg-white px-5 py-12 md:px-[5vw]">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-[0.15em] text-[#2563eb] flex items-center gap-1.5">
+              <History size={14} /> Jump Back In
+            </span>
+            <h2 className="mt-1 text-2xl font-extrabold text-[#0f172a]">
+              Recently Viewed Lots
+            </h2>
+          </div>
+          <Link
+            href="/auctions"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#2563eb] hover:underline"
+          >
+            Explore all lots <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+          {items.map((lot) => (
+            <Link
+              key={lot.id}
+              href={`/auctions/${lot.slug || lot.id}`}
+              className="group block overflow-hidden rounded-xl border border-slate-200 bg-[#f8fafc] p-2.5 transition hover:-translate-y-1 hover:border-[#2563eb] hover:bg-white hover:shadow-md"
+            >
+              <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-200 mb-2">
+                <img
+                  src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+                  alt={lot.title}
+                  className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                />
+              </div>
+              <p className="text-xs font-bold text-[#0f172a] truncate group-hover:text-[#2563eb]">
+                {lot.title}
+              </p>
+              <p className="text-xs font-extrabold text-[#2563eb] mt-1">
+                {formatINR(lot.askingPrice || 0)}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HomePage() {
   return (
     <div className="min-h-screen bg-white text-[#0f172a] selection:bg-[#2563eb] selection:text-white">
@@ -1087,6 +1139,7 @@ export function HomePage() {
       <main>
         <HeroSection />
         <TrustStrip />
+        <RecentlyViewedSection />
         <FeaturedAuctions />
         <CategoriesSection />
         <HowItWorks />
