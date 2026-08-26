@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage, formatCurrency } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 
 export function ListingReviewModal({ listing, onClose, onSuccess }) {
   const [decision, setDecision] = useState("approve");
@@ -113,7 +114,7 @@ export function ListingReviewModal({ listing, onClose, onSuccess }) {
                 <div className="grid grid-cols-4 gap-2">
                   {gallery.map((img, i) => (
                     <div key={img.id || i} className="relative aspect-square w-full overflow-hidden rounded-lg border border-slate-200 bg-white">
-                      <img src={img.imageUrl || img.url} alt={`Gallery ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />
+                      <img src={resolveImageUrl(img.imageUrl || img.url)} alt={`Gallery ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />
                     </div>
                   ))}
                 </div>

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import api from "../lib/api";
 import { formatCurrency } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 import { useCategories } from "../hooks/useCategories";
 import { useAuctionTiming } from "../hooks/useCountdown";
 import { Footer, Navbar } from "../components";
@@ -144,7 +145,7 @@ export function ListingCard({ item, viewMode = "grid" }) {
         {/* List Thumbnail */}
         <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100 sm:w-72 sm:min-h-[220px]">
           <img
-            src={item.imageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+            src={resolveImageUrl(item.imageUrl || item.thumbnailUrl)}
             alt={item.title}
             className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${
               isClosed
@@ -314,7 +315,7 @@ export function ListingCard({ item, viewMode = "grid" }) {
       {/* Thumbnail Area */}
       <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
         <img
-          src={item.imageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+          src={resolveImageUrl(item.imageUrl || item.thumbnailUrl)}
           alt={item.title}
           className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${
             isClosed
@@ -1290,7 +1291,7 @@ export default function AuctionListingPage() {
                 >
                   <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 mb-2">
                     <img
-                      src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+                      src={resolveImageUrl(lot.imageUrl)}
                       alt={lot.title}
                       className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition duration-300"
                     />

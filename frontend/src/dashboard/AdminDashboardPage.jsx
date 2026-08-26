@@ -28,6 +28,7 @@ import { CreateUserModal } from "../components/CreateUserModal";
 import { useAuth } from "../auth/AuthContext";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatINR } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 import { EmptyState, LoadingState } from "../components";
 import { VerificationQueueSection } from "../admin/VerificationQueueSection";
 import { CategoryManagementSection } from "../admin/CategoryManagementSection";
@@ -1242,7 +1243,7 @@ export default function AdminDashboardPage() {
               </label>
               <div className="relative aspect-[16/9] max-h-[360px] w-full overflow-hidden rounded-xl border border-slate-200 bg-[#0f172a] shadow-inner group">
                 <img
-                  src={bannerUrl}
+                  src={resolveImageUrl(bannerUrl)}
                   alt="How It Works Banner Preview"
                   className="h-full w-full object-cover opacity-80"
                 />

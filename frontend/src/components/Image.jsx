@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-
-const FALLBACK_IMAGE = "/hero-auction-marketplace.png";
+import { resolveImageUrl, DEFAULT_FALLBACK_IMAGE } from "../lib/image";
 
 /**
  * Shared responsive image with a safe local fallback.
@@ -19,10 +18,10 @@ export function Image({
   style,
   ...props
 }) {
-  const [imgSrc, setImgSrc] = useState(src);
+  const [imgSrc, setImgSrc] = useState(() => resolveImageUrl(src));
 
   useEffect(() => {
-    setImgSrc(src);
+    setImgSrc(resolveImageUrl(src));
   }, [src]);
 
   return (
@@ -33,8 +32,8 @@ export function Image({
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       onError={() => {
-        if (imgSrc !== FALLBACK_IMAGE) {
-          setImgSrc(FALLBACK_IMAGE);
+        if (imgSrc !== DEFAULT_FALLBACK_IMAGE) {
+          setImgSrc(DEFAULT_FALLBACK_IMAGE);
         }
       }}
       className={`${fill ? "absolute inset-0 h-full w-full object-cover" : ""} ${className || ""}`}

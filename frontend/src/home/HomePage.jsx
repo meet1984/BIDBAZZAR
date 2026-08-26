@@ -24,6 +24,7 @@ import {
 import { EmptyState, ErrorState, Footer, Image, Link, LoadingState, Navbar } from "../components";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatINR } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 import { useAuctionTiming } from "../hooks/useCountdown";
 import { useAuth } from "../auth/AuthContext";
 
@@ -1118,7 +1119,7 @@ function RecentlyViewedSection() {
             >
               <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-lg bg-slate-200 mb-2">
                 <img
-                  src={lot.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+                  src={resolveImageUrl(lot.imageUrl)}
                   alt={lot.title}
                   className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition duration-300"
                 />

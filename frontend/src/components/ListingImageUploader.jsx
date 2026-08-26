@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ArrowLeft, ArrowRight, LoaderCircle, Star, Trash2, UploadCloud } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 
 export default function ListingImageUploader({
   listingId,
@@ -185,7 +186,7 @@ export default function ListingImageUploader({
               }`}
           >
             <img
-              src={img.imageUrl || img.url}
+              src={resolveImageUrl(img.imageUrl || img.url)}
               alt={`Listing thumbnail ${idx + 1}`}
               className="absolute inset-0 h-full w-full object-cover"
             />

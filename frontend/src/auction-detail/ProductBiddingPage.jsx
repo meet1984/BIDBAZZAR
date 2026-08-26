@@ -16,6 +16,7 @@ import { useAuctionTiming } from "../hooks/useCountdown";
 import { Footer, Navbar } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { errorMessage, formatCurrency, formatDateTime, formatINR } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 
 function LockedBiddingCard({ listing, timing }) {
   const { user } = useAuth();
@@ -998,7 +999,7 @@ function saveRecentlyViewed(item) {
       id: item.id,
       slug: item.publicSlug || item.slug || String(item.id),
       title: item.title,
-      imageUrl: item.primaryImageUrl || item.imageUrl || item.thumbnailUrl || (Array.isArray(item.images) && item.images[0]?.imageUrl) || "",
+      imageUrl: resolveImageUrl(item.primaryImageUrl || item.imageUrl || item.thumbnailUrl || (Array.isArray(item.images) && item.images[0]?.imageUrl) || ""),
       askingPrice: item.askingPrice ?? item.startingPrice ?? item.currentBid ?? 0,
       status: item.status || "live",
       condition: item.condition || "new",
@@ -1077,10 +1078,10 @@ export default function ProductBiddingPage() {
   }
 
   const gallery = listing.images && listing.images.length > 0
-    ? listing.images.map((img) => ({ url: img.imageUrl || img.url }))
+    ? listing.images.map((img) => ({ url: resolveImageUrl(img.imageUrl || img.url) }))
     : listing.galleryImages && listing.galleryImages.length > 0
-      ? listing.galleryImages
-      : [{ url: listing.imageUrl || selectedImage }];
+      ? listing.galleryImages.map((img) => ({ url: resolveImageUrl(img.url || img.imageUrl || img) }))
+      : [{ url: resolveImageUrl(listing.imageUrl || selectedImage) }];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -1107,7 +1108,7 @@ export default function ProductBiddingPage() {
           <div className="lg:col-span-7 space-y-4">
             <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
               <img
-                src={selectedImage || gallery[0]?.url || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80"}
+                src={resolveImageUrl(selectedImage) || gallery[0]?.url}
                 alt={listing.title}
                 className="absolute inset-0 h-full w-full object-cover"
               />

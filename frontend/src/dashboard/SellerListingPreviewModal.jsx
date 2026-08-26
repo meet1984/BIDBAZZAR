@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import api from "../lib/api";
 import { formatCurrency } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
 
 export function SellerListingPreviewModal({ listing, onClose, onEdit }) {
   const [images, setImages] = useState([]);
@@ -89,7 +90,7 @@ export function SellerListingPreviewModal({ listing, onClose, onEdit }) {
             <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
               {images.length > 0 ? (
                 <img
-                  src={images[selectedImage]?.imageUrl || images[selectedImage]?.url}
+                  src={resolveImageUrl(images[selectedImage]?.imageUrl || images[selectedImage]?.url)}
                   alt={listing.title}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
@@ -110,7 +111,7 @@ export function SellerListingPreviewModal({ listing, onClose, onEdit }) {
                     className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition ${selectedImage === idx ? "border-[#2563eb]" : "border-transparent opacity-70"
                       }`}
                   >
-                    <img src={img.imageUrl || img.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img src={resolveImageUrl(img.imageUrl || img.url)} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
