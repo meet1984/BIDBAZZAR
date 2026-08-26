@@ -76,6 +76,7 @@ export default function AdminDashboardPage() {
   const [bannerUrl, setBannerUrl] = useState(() => {
     return localStorage.getItem("how_it_works_banner") || "/hero-auction-marketplace.png";
   });
+  const [bannerFile, setBannerFile] = useState(null);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [bannerSaving, setBannerSaving] = useState(false);
   const [bannerMsg, setBannerMsg] = useState({ type: "", text: "" });
@@ -263,9 +264,10 @@ export default function AdminDashboardPage() {
     setBannerUploading(true);
     setBannerMsg({ type: "", text: "" });
     try {
+      setBannerFile(file);
       const compressed = await compressImage(file, 1600, 0.85);
       setBannerUrl(compressed);
-      setBannerMsg({ type: "success", text: "Photo selected & compressed. Click 'Save Banner Changes' to publish." });
+      setBannerMsg({ type: "success", text: "Photo selected & preview ready. Click 'Save Banner Changes' to publish." });
     } catch {
       setBannerMsg({ type: "error", text: "Failed to process image file." });
     } finally {
@@ -277,8 +279,24 @@ export default function AdminDashboardPage() {
     setBannerSaving(true);
     setBannerMsg({ type: "", text: "" });
     try {
-      await api.put("/admin/settings/how-it-works-banner", { bannerUrl });
-      localStorage.setItem("how_it_works_banner", bannerUrl);
+      let savedUrl = bannerUrl;
+      if (bannerFile) {
+        const formData = new FormData();
+        formData.append("image", bannerFile);
+        const { data } = await api.post("/admin/settings/how-it-works-banner/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        savedUrl = data.bannerUrl;
+        setBannerUrl(savedUrl);
+        setBannerFile(null);
+      } else {
+        const { data } = await api.put("/admin/settings/how-it-works-banner", { bannerUrl });
+        if (data?.bannerUrl) {
+          savedUrl = data.bannerUrl;
+          setBannerUrl(savedUrl);
+        }
+      }
+      localStorage.setItem("how_it_works_banner", savedUrl);
       setBannerMsg({ type: "success", text: "How It Works page banner photo updated successfully!" });
     } catch (err) {
       setBannerMsg({ type: "error", text: errorMessage(err, "Failed to save banner image.") });
@@ -290,12 +308,13 @@ export default function AdminDashboardPage() {
   const handleResetBanner = async () => {
     const defaultUrl = "/hero-auction-marketplace.png";
     setBannerUrl(defaultUrl);
+    setBannerFile(null);
     try {
       await api.put("/admin/settings/how-it-works-banner", { bannerUrl: defaultUrl });
       localStorage.setItem("how_it_works_banner", defaultUrl);
       setBannerMsg({ type: "success", text: "Banner reset to default image." });
-    } catch {
-      // ignore
+    } catch (err) {
+      setBannerMsg({ type: "error", text: errorMessage(err, "Failed to reset banner.") });
     }
   };
 
