@@ -1,5 +1,26 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import { resolveImageUrl, getBackendBaseUrl, DEFAULT_FALLBACK_IMAGE } from "./image";
+
+describe("getBackendBaseUrl", () => {
+  const originalEnv = { ...import.meta.env };
+
+  afterEach(() => {
+    import.meta.env.VITE_BACKEND_URL = originalEnv.VITE_BACKEND_URL;
+    import.meta.env.VITE_API_URL = originalEnv.VITE_API_URL;
+  });
+
+  it("returns empty string when no backend url is configured", () => {
+    delete import.meta.env.VITE_BACKEND_URL;
+    delete import.meta.env.VITE_API_URL;
+    expect(getBackendBaseUrl()).toBe("");
+  });
+
+  it("prefers VITE_BACKEND_URL over VITE_API_URL", () => {
+    import.meta.env.VITE_BACKEND_URL = "https://backend.bidmylot.com/";
+    import.meta.env.VITE_API_URL = "https://api.bidmylot.com/api";
+    expect(getBackendBaseUrl()).toBe("https://backend.bidmylot.com");
+  });
+});
 
 describe("resolveImageUrl", () => {
   const originalEnv = { ...import.meta.env };
