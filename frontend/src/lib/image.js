@@ -26,7 +26,8 @@ export function getBackendBaseUrl() {
  * Resolves an image URL for display across environments.
  * - Handles external absolute URLs (http, https)
  * - Handles data URIs (data:image/...) and object URLs (blob:)
- * - Prepends backend origin to relative backend storage paths (/uploads/...)
+ * - Routes relative backend storage paths (/uploads/...) through /api/uploads/...
+ * - Prepends backend origin if configured
  * - Returns a fallback image when the URL is empty, invalid, or null
  */
 export function resolveImageUrl(url, fallback = DEFAULT_FALLBACK_IMAGE) {
@@ -49,11 +50,19 @@ export function resolveImageUrl(url, fallback = DEFAULT_FALLBACK_IMAGE) {
     return trimmed;
   }
 
-  // If path is a relative backend upload (e.g. /uploads/... or uploads/...)
-  if (trimmed.startsWith("/uploads") || trimmed.startsWith("uploads/")) {
+  // If path is a relative backend upload (e.g. /uploads/... or /api/uploads/...)
+  if (
+    trimmed.startsWith("/uploads") ||
+    trimmed.startsWith("uploads/") ||
+    trimmed.startsWith("/api/uploads") ||
+    trimmed.startsWith("api/uploads/")
+  ) {
     const backendOrigin = getBackendBaseUrl();
-    const normalizedPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-    return backendOrigin ? `${backendOrigin}${normalizedPath}` : normalizedPath;
+    let apiPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    if (!apiPath.startsWith("/api/")) {
+      apiPath = `/api${apiPath}`;
+    }
+    return backendOrigin ? `${backendOrigin}${apiPath}` : apiPath;
   }
 
   // Other relative root paths (e.g. public frontend assets like /hero-auction-marketplace.png)

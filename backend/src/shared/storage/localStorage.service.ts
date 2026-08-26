@@ -97,7 +97,9 @@ export class LocalStorageService implements StorageService {
     if (!fileKeyOrUrl) return;
 
     let relativePath = fileKeyOrUrl;
-    if (fileKeyOrUrl.startsWith(this.baseUrlPrefix)) {
+    if (fileKeyOrUrl.startsWith("/api/uploads")) {
+      relativePath = fileKeyOrUrl.slice("/api/uploads".length).replace(/^\/+/, "");
+    } else if (fileKeyOrUrl.startsWith(this.baseUrlPrefix)) {
       relativePath = fileKeyOrUrl.slice(this.baseUrlPrefix.length).replace(/^\/+/, "");
     }
 

@@ -67,6 +67,13 @@ describe("Support Attachment Access Control", () => {
     expect(response.status).toBe(404);
   });
 
+  it("handles /api/uploads/listings static route without hitting ROUTE_NOT_FOUND error envelope", async () => {
+    const response = await request(app).get("/api/uploads/listings/non-existent.png");
+    expect(response.status).toBe(404);
+    // express.static returns standard 404 not JSON API error envelope
+    expect(response.body).not.toHaveProperty("code", "ROUTE_NOT_FOUND");
+  });
+
   it("requires an admin token to download an attachment", async () => {
     // 1. Without token, it should be 401 Unauthorized
     const noTokenResponse = await request(app).get("/api/admin/support/enquiries/999/attachment");

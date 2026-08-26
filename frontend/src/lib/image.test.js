@@ -52,13 +52,27 @@ describe("resolveImageUrl", () => {
     expect(resolveImageUrl(blobUrl)).toBe(blobUrl);
   });
 
+  it("resolves /uploads/ path to /api/uploads/ in single-domain cPanel deployment", () => {
+    delete import.meta.env.VITE_BACKEND_URL;
+    import.meta.env.VITE_API_URL = "/api";
+    expect(resolveImageUrl("/uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png")).toBe(
+      "/api/uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png"
+    );
+    expect(resolveImageUrl("uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png")).toBe(
+      "/api/uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png"
+    );
+    expect(resolveImageUrl("/api/uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png")).toBe(
+      "/api/uploads/listings/c9dec594-2df9-49e3-956c-d5149585f707.png"
+    );
+  });
+
   it("prepends VITE_BACKEND_URL when configured for /uploads paths", () => {
     import.meta.env.VITE_BACKEND_URL = "https://api.bidmylot.com";
     expect(resolveImageUrl("/uploads/listings/image-123.jpg")).toBe(
-      "https://api.bidmylot.com/uploads/listings/image-123.jpg"
+      "https://api.bidmylot.com/api/uploads/listings/image-123.jpg"
     );
-    expect(resolveImageUrl("uploads/listings/image-123.jpg")).toBe(
-      "https://api.bidmylot.com/uploads/listings/image-123.jpg"
+    expect(resolveImageUrl("/api/uploads/listings/image-123.jpg")).toBe(
+      "https://api.bidmylot.com/api/uploads/listings/image-123.jpg"
     );
   });
 
@@ -66,18 +80,15 @@ describe("resolveImageUrl", () => {
     delete import.meta.env.VITE_BACKEND_URL;
     import.meta.env.VITE_API_URL = "https://api.bidmylot.com/api";
     expect(resolveImageUrl("/uploads/listings/sample.webp")).toBe(
-      "https://api.bidmylot.com/uploads/listings/sample.webp"
+      "https://api.bidmylot.com/api/uploads/listings/sample.webp"
     );
   });
 
-  it("leaves standard relative static assets as relative when no backend URL is set", () => {
+  it("leaves standard relative static assets as relative", () => {
     delete import.meta.env.VITE_BACKEND_URL;
     import.meta.env.VITE_API_URL = "/api";
     expect(resolveImageUrl("/hero-auction-marketplace.png")).toBe(
       "/hero-auction-marketplace.png"
-    );
-    expect(resolveImageUrl("/uploads/listings/sample.jpg")).toBe(
-      "/uploads/listings/sample.jpg"
     );
   });
 });

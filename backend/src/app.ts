@@ -60,9 +60,9 @@ export function createApp() {
   app.use(cookieParser());
   // Only listing/media uploads are public. Identity and support documents use
   // PRIVATE_UPLOAD_DIR and are streamed through authenticated endpoints.
-  app.use(
-    "/uploads/listings",
-    express.static(path.resolve(process.cwd(), env.UPLOAD_DIR, "listings"), {
+  const staticListingsMiddleware = express.static(
+    path.resolve(process.cwd(), env.UPLOAD_DIR, "listings"),
+    {
       fallthrough: false,
       index: false,
       dotfiles: "deny",
@@ -70,8 +70,10 @@ export function createApp() {
       setHeaders: (res) => {
         res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
       },
-    }),
+    },
   );
+  app.use("/uploads/listings", staticListingsMiddleware);
+  app.use("/api/uploads/listings", staticListingsMiddleware);
 
   const healthHandler = asyncHandler(async (_req, res) => {
     let dbStatus = "ok";

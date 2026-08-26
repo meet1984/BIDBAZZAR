@@ -39,6 +39,20 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
+  if (typeof error === "object" && error !== null && ("status" in error || "statusCode" in error)) {
+    const status = Number(
+      (error as { status?: number; statusCode?: number }).status ??
+        (error as { status?: number; statusCode?: number }).statusCode,
+    );
+    if (!Number.isNaN(status) && status >= 400 && status < 500) {
+      response.status(status).json({
+        code: status === 404 ? "NOT_FOUND" : "CLIENT_ERROR",
+        message: (error as { message?: string }).message || "The requested resource was not found.",
+      });
+      return;
+    }
+  }
+
   logger.error("Unhandled Express Request Error:", error);
 
   response.status(500).json({
