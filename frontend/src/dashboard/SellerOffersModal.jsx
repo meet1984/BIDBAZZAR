@@ -280,7 +280,6 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
     const isAccepted = offer.status === "accepted_pending_buyer";
     const isShortlisted = offer.status === "shortlisted";
     const isCountered = offer.status === "countered";
-    const isRejected = offer.status === "rejected";
     const isCancelled = ["rejected", "withdrawn", "declined", "buyer_declined", "cancelled", "seller_declined"].includes(offer.status);
 
     const buyerName = offer.buyer?.fullName || offer.buyerPublicProfile?.displayName || `Buyer #${offer.buyerId}`;
@@ -554,7 +553,6 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
                     const isReserved = offer.status === "allocation_reserved";
                     const isConfirmed = offer.status === "confirmed";
                     const isCountered = offer.status === "countered";
-                    const isRejected = offer.status === "rejected";
                     const isCancelled = ["rejected", "withdrawn", "declined", "cancelled", "buyer_declined", "seller_declined"].includes(offer.status);
 
                     const buyerName = offer.buyer?.fullName || offer.buyerPublicProfile?.displayName || `Buyer #${offer.buyerId}`;

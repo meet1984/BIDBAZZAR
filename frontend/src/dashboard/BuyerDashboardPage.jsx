@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Ban, CheckCircle2, Clock, Eye, LifeBuoy, Plus, ShoppingBag } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Ban, CheckCircle2, Clock, LifeBuoy } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatINR } from "../lib/format";
 import { EmptyState, ErrorState, Link, LoadingState, SupportComplaintModal, TicketTrackerModal, VerificationStatusBanner } from "../components";
