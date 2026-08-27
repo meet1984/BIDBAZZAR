@@ -1,3 +1,7 @@
+<IfModule mod_security.c>
+  SecRuleRemoveById 911100
+</IfModule>
+
 # Apache configuration for cPanel Single Page Application (SPA) routing
 <IfModule mod_rewrite.c>
   RewriteEngine On
