@@ -51,7 +51,7 @@ export default function NotificationsPage() {
     setMarkingIds((prev) => new Set(prev).add(id));
 
     try {
-      await api.patch(`/notifications/${id}/read`);
+      await api.post(`/notifications/${id}/read`, {});
       void refreshGlobalCount();
     } catch (requestError) {
       // Revert on failure
@@ -78,7 +78,7 @@ export default function NotificationsPage() {
     setUnread(0);
 
     try {
-      await api.post("/notifications/mark-all-read");
+      await api.post("/notifications/mark-all-read", {});
       void refreshGlobalCount();
     } catch (requestError) {
       setItems(previousItems);
