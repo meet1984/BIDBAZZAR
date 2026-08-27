@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
+  Ban,
   CheckCircle2,
   ClipboardList,
   FolderTree,
@@ -397,6 +398,35 @@ function OrderOversightQueue() {
 
           {selectedOrder && (
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+              {selectedOrder.orderStatus === "cancelled" && (
+                <div className="relative overflow-hidden rounded-xl border-2 border-red-300 bg-gradient-to-br from-red-50 via-rose-50 to-red-100/70 p-4 shadow-xs">
+                  <div className="pointer-events-none absolute right-2 -bottom-3 select-none font-black text-6xl tracking-widest text-red-500/10 uppercase rotate-[-5deg]">
+                    CANCELLED
+                  </div>
+                  <div className="relative z-10 flex items-start gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-600 text-white shadow-xs">
+                      <Ban size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-[10px] font-black uppercase text-white">
+                          DEAL CANCELLED
+                        </span>
+                        <span className="text-xs font-mono font-bold text-red-700">
+                          {selectedOrder.orderReference}
+                        </span>
+                      </div>
+                      <h4 className="mt-1 text-base font-black text-red-950">
+                        This Deal Was Cancelled
+                      </h4>
+                      <p className="mt-0.5 text-xs text-red-900/80 leading-relaxed">
+                        Transaction terminated. Direct arrangement between buyer and seller was cancelled.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
                 <div>
                   <h3 className="text-sm font-black text-slate-900">Deal {selectedOrder.orderReference}</h3>
@@ -407,7 +437,7 @@ function OrderOversightQueue() {
                     selectedOrder.orderStatus === "completed"
                       ? "bg-emerald-100 text-emerald-800"
                       : selectedOrder.orderStatus === "cancelled"
-                      ? "bg-red-100 text-red-800"
+                      ? "bg-red-600 text-white shadow-2xs"
                       : "bg-blue-100 text-blue-800"
                   }`}
                 >

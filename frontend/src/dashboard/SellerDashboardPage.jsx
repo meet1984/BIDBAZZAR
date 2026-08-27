@@ -11,13 +11,14 @@ import {
   Plus,
   Search,
   Send,
+  ShoppingBag,
   Sparkles,
   Tag,
   Trash2,
 } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatCurrency } from "../lib/format";
-import { EmptyState, ErrorState, LoadingState, SupportComplaintModal, TicketTrackerModal, VerificationStatusBanner } from "../components";
+import { EmptyState, ErrorState, Link, LoadingState, SupportComplaintModal, TicketTrackerModal, VerificationStatusBanner } from "../components";
 import { DashboardLayout } from "./DashboardLayout";
 import AuctionForm from "./AuctionForm";
 import { SellerListingPreviewModal } from "./SellerListingPreviewModal";
@@ -188,8 +189,8 @@ export default function SellerDashboardPage() {
             type="button"
             onClick={() => setActiveTab("auctions")}
             className={`border-b-2 px-6 py-3 text-sm font-bold transition ${activeTab === "auctions"
-                ? "border-[#2563eb] text-[#2563eb]"
-                : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-[#2563eb] text-[#2563eb]"
+              : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
           >
             My Listings & Lots ({state.items.length})
@@ -199,8 +200,8 @@ export default function SellerDashboardPage() {
             type="button"
             onClick={() => setActiveTab("support")}
             className={`border-b-2 px-6 py-3 text-sm font-bold transition ${activeTab === "support"
-                ? "border-[#2563eb] text-[#2563eb]"
-                : "border-transparent text-slate-500 hover:text-slate-700"
+              ? "border-[#2563eb] text-[#2563eb]"
+              : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
           >
             Support Tickets ({tickets.length})
@@ -235,19 +236,28 @@ export default function SellerDashboardPage() {
                 </select>
               </div>
 
-              {verificationStatus === "verified" ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveFormAuction({})}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700"
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/seller/orders"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
                 >
-                  <Plus size={16} /> Create New Listing
-                </button>
-              ) : (
-                <div className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                  <Lock size={14} /> Verification Required to List
-                </div>
-              )}
+                  <ShoppingBag size={15} className="text-slate-500" /> Orders & Deals
+                </Link>
+
+                {verificationStatus === "verified" ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveFormAuction({})}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
+                  >
+                    <Plus size={16} /> Create New Listing
+                  </button>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                    <Lock size={14} /> Verification Required to List
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Informational Visibility Notice */}

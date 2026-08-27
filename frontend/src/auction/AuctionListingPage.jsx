@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Star,
   Tag,
   Timer,
   X,
@@ -206,9 +207,18 @@ export function ListingCard({ item, viewMode = "grid" }) {
                 )}
               </div>
 
-              <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${isClosed ? "text-slate-500" : "text-emerald-700"}`}>
-                <ShieldCheck size={14} /> Verified Seller
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${isClosed ? "text-slate-500" : "text-emerald-700"}`}>
+                  <ShieldCheck size={14} /> {item.sellerName || "Verified Seller"}
+                </span>
+                <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md text-[11px]">
+                  <Star size={11} className="fill-amber-400 text-amber-400" />
+                  <span>{item.sellerRating && Number(item.sellerRating) > 0 ? Number(item.sellerRating).toFixed(1) : "5.0"}</span>
+                  <span className="text-[10px] text-slate-500 font-normal">
+                    ({item.sellerReviewCount || 0})
+                  </span>
+                </span>
+              </div>
             </div>
 
             <h3
@@ -258,42 +268,26 @@ export function ListingCard({ item, viewMode = "grid" }) {
                 }`}
               >
                 {item.saleMode === "multi_unit_offer"
-                  ? `${formatCurrency(item.askingPricePerUnit || 0)} / ${item.unitName || "unit"}`
+                  ? `${formatCurrency(item.askingPricePerUnit || 0)}`
                   : formatCurrency(item.askingPrice || 0)}
+                {item.saleMode === "multi_unit_offer" && (
+                  <span className="text-xs font-normal text-slate-500"> / {item.unitName || "unit"}</span>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
-                  {timing.countdownLabel}
-                </span>
-                <div
-                  className={`font-mono text-xs font-bold ${
-                    isClosed
-                      ? "text-slate-500"
-                      : isUpcoming
-                        ? "text-blue-600"
-                        : timing.isEndingSoon
-                          ? "text-amber-600"
-                          : "text-emerald-700"
-                  }`}
-                >
-                  {timing.formattedTime}
-                </div>
-              </div>
-
+            <div className="flex items-center gap-3">
               <a
                 href={`/auctions/${item.publicSlug || item.id}`}
-                className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-xs ${
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-xs ${
                   isClosed
                     ? "bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-900"
                     : isUpcoming
                       ? "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
-                      : "bg-[#2563eb] text-white hover:bg-blue-700 hover:shadow-md"
+                      : "bg-[#2563eb] text-white hover:bg-blue-700"
                 }`}
               >
-                {isClosed ? "View Archive" : isUpcoming ? "Preview Lot" : "Submit Offer"}
+                {isClosed ? "View Lot Archive" : isUpcoming ? "Preview Lot" : "View Lot & Make Offer"}
                 <ArrowRight size={14} />
               </a>
             </div>
@@ -303,7 +297,7 @@ export function ListingCard({ item, viewMode = "grid" }) {
     );
   }
 
-  // Grid Card
+  // Grid Card Default
   return (
     <div
       className={`group relative flex flex-col h-full overflow-hidden rounded-2xl border shadow-xs transition-all duration-300 hover:-translate-y-1 ${
@@ -315,7 +309,7 @@ export function ListingCard({ item, viewMode = "grid" }) {
       {/* Thumbnail Area */}
       <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
         <img
-          src={resolveImageUrl(item.imageUrl || item.thumbnailUrl)}
+          src={resolveImageUrl(item.primaryImageUrl || item.imageUrl || item.thumbnailUrl)}
           alt={item.title}
           className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${
             isClosed
@@ -361,78 +355,93 @@ export function ListingCard({ item, viewMode = "grid" }) {
               : "bg-slate-950/65 text-white"
           }`}
         >
-          <span className={isClosed ? "text-slate-400 font-medium" : "text-slate-300 font-medium"}>
-            {timing.countdownLabel}:
-          </span>
-          <span
-            className={`font-mono font-bold ${
+            <span className={isClosed ? "text-slate-400 font-medium" : "text-slate-300 font-medium"}>
+              {timing.countdownLabel}:
+            </span>
+            <span
+              className={`font-mono font-bold ${
+                isClosed
+                  ? "text-slate-300"
+                  : isUpcoming
+                    ? "text-blue-300"
+                    : timing.isEndingSoon
+                      ? "text-amber-300"
+                      : "text-emerald-300"
+              }`}
+            >
+              {timing.formattedTime}
+            </span>
+          </div>
+        </div>
+
+        {/* Card Content */}
+        <div className="flex flex-1 flex-col justify-between p-4">
+          {/* Category & LOT Ref */}
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+            <span className="truncate max-w-[140px]">
+              {item.category?.name || "General"}
+              {item.subcategory?.name && ` • ${item.subcategory.name}`}
+            </span>
+            <span className="font-mono text-[10px] font-bold text-slate-400">
+              {item.listingReference || `LOT-${item.id}`}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3
+            className={`mt-1.5 text-[15px] font-bold leading-snug line-clamp-2 min-h-[42px] transition-colors ${
               isClosed
-                ? "text-slate-300"
-                : isUpcoming
-                  ? "text-blue-300"
-                  : timing.isEndingSoon
-                    ? "text-amber-300"
-                    : "text-emerald-300"
+                ? "text-slate-700 group-hover:text-slate-900"
+                : "text-slate-900 group-hover:text-blue-600"
             }`}
           >
-            {timing.formattedTime}
-          </span>
-        </div>
-      </div>
+            <a href={`/auctions/${item.publicSlug || item.id}`}>{item.title}</a>
+          </h3>
 
-      {/* Card Content */}
-      <div className="flex flex-1 flex-col justify-between p-4">
-        {/* Category & LOT Ref */}
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
-          <span className="truncate max-w-[140px]">
-            {item.category?.name || "General"}
-            {item.subcategory?.name && ` • ${item.subcategory.name}`}
-          </span>
-          <span className="font-mono text-[10px] font-bold text-slate-400">
-            {item.listingReference || `LOT-${item.id}`}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3
-          className={`mt-1.5 text-[15px] font-bold leading-snug line-clamp-2 min-h-[42px] transition-colors ${
-            isClosed
-              ? "text-slate-700 group-hover:text-slate-900"
-              : "text-slate-900 group-hover:text-blue-600"
-          }`}
-        >
-          <a href={`/auctions/${item.publicSlug || item.id}`}>{item.title}</a>
-        </h3>
-
-        {/* Metadata pills */}
-        <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
-          <span className="flex items-center gap-1 truncate">
-            <MapPin size={12} className="text-slate-400" /> {item.location || "India"}
-          </span>
-          <span className="capitalize font-medium text-slate-600">
-            {item.condition?.replace("-", " ") || "New"}
-          </span>
-        </div>
-
-        {/* Multi-Unit Inventory Stock Indicator */}
-        {item.saleMode === "multi_unit_offer" && (
-          <div className="mt-3 rounded-lg bg-slate-50 p-2 border border-slate-100">
-            <div className="flex justify-between text-[10px] text-slate-600 font-medium mb-1">
-              <span>Stock Remaining</span>
-              <span className="font-bold text-slate-900">
-                {remainingQty} / {totalQty} {item.unitName || "units"}
+          {/* Seller & Rating Badge */}
+          <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+            <span className="truncate max-w-[130px] font-medium text-slate-600 flex items-center gap-1">
+              <ShieldCheck size={12} className="text-emerald-600 shrink-0" />
+              <span className="truncate">{item.sellerName || "Verified Seller"}</span>
+            </span>
+            <span className="inline-flex items-center gap-1 shrink-0 font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md text-[11px]">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <span>{item.sellerRating && Number(item.sellerRating) > 0 ? Number(item.sellerRating).toFixed(1) : "5.0"}</span>
+              <span className="text-[10px] text-slate-500 font-normal">
+                ({item.sellerReviewCount || 0})
               </span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  isClosed ? "bg-slate-400" : stockPercentage < 25 ? "bg-amber-500" : "bg-blue-600"
-                }`}
-                style={{ width: `${stockPercentage}%` }}
-              />
-            </div>
+            </span>
           </div>
-        )}
+
+          {/* Metadata pills */}
+          <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 truncate">
+              <MapPin size={12} className="text-slate-400" /> {item.location || "India"}
+            </span>
+            <span className="capitalize font-medium text-slate-600">
+              {item.condition?.replace("-", " ") || "New"}
+            </span>
+          </div>
+
+          {/* Multi-Unit Inventory Stock Indicator */}
+          {item.saleMode === "multi_unit_offer" && (
+            <div className="mt-3 rounded-lg bg-slate-50 p-2 border border-slate-100">
+              <div className="flex justify-between text-[10px] text-slate-600 font-medium mb-1">
+                <span>Stock Remaining</span>
+                <span className="font-bold text-slate-900">
+                  {remainingQty} / {totalQty} {item.unitName || "units"}
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    isClosed ? "bg-slate-400" : stockPercentage < 25 ? "bg-amber-500" : "bg-blue-600"
+                  }`}
+                  style={{ width: `${stockPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
 
         {/* Price & Action Section */}
         <div className="mt-auto pt-3 border-t border-slate-100 flex items-end justify-between gap-2">

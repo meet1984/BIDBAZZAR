@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { LifeBuoy, Plus, Clock, CheckCircle2, Eye } from "lucide-react";
+import { Ban, CheckCircle2, Clock, Eye, LifeBuoy, Plus, ShoppingBag } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatINR } from "../lib/format";
 import { EmptyState, ErrorState, Link, LoadingState, SupportComplaintModal, TicketTrackerModal, VerificationStatusBanner } from "../components";
@@ -79,6 +79,7 @@ function BuyerOfferRows({ offers, onRefresh }) {
           return;
         }
       } else if (action === "withdraw") {
+
         if (window.confirm("Are you sure you want to withdraw your offer?")) {
           await api.post(`/offers/${id}/withdraw`);
         } else {
@@ -127,7 +128,6 @@ function BuyerOfferRows({ offers, onRefresh }) {
     }
   };
 
-
   return (
     <div className="space-y-4">
       <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
@@ -135,12 +135,20 @@ function BuyerOfferRows({ offers, onRefresh }) {
           const isPendingConfirm = offer.status === "accepted_pending_buyer" || offer.status === "allocation_reserved";
           const isConfirmed = offer.status === "buyer_confirmed" || offer.status === "confirmed";
           const isCountered = offer.status === "countered";
+          const isCancelled = ["cancelled", "rejected", "withdrawn", "declined", "buyer_declined", "seller_declined", "allocation_cancelled"].includes(offer.status);
           const canModify = ["submitted", "revised", "shortlisted", "countered", "contact_requested"].includes(offer.status);
 
           return (
-            <div key={offer.id} className="p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50/50 transition-colors">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
+            <div
+              key={offer.id}
+              className={`p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-colors ${
+                isCancelled
+                  ? "bg-red-50/20 hover:bg-red-50/40 border-l-4 border-l-red-500"
+                  : "hover:bg-slate-50/50"
+              }`}
+            >
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   {offer.isMultiUnit && (
                     <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-[#2563eb]">
                       Multi-Unit Offer
@@ -148,21 +156,29 @@ function BuyerOfferRows({ offers, onRefresh }) {
                   )}
                   <span className="font-mono text-[11px] font-bold text-slate-400">{offer.listingReference || `OFFER-${offer.id}`}</span>
                   <span
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
-                      isConfirmed
-                        ? "bg-emerald-100 text-emerald-800"
-                        : isPendingConfirm
-                          ? "bg-amber-100 text-amber-900 border border-amber-300"
-                          : isCountered
-                            ? "bg-purple-100 text-purple-900"
-                            : "bg-slate-100 text-slate-700"
+                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                      isCancelled
+                        ? "bg-red-600 text-white shadow-2xs"
+                        : isConfirmed
+                          ? "bg-emerald-100 text-emerald-800"
+                          : isPendingConfirm
+                            ? "bg-amber-100 text-amber-900 border border-amber-300"
+                            : isCountered
+                              ? "bg-purple-100 text-purple-900"
+                              : "bg-slate-100 text-slate-700"
                     }`}
                   >
+                    {isCancelled && <Ban size={10} />}
                     {offer.status.replace(/_/g, " ")}
                   </span>
                 </div>
 
-                <Link href={`/auctions/${offer.publicSlug || offer.listingId}`} className="font-bold text-[#0f172a] hover:text-[#2563eb] text-sm block">
+                <Link
+                  href={`/auctions/${offer.publicSlug || offer.listingId}`}
+                  className={`font-bold text-sm block ${
+                    isCancelled ? "text-slate-700 line-through decoration-red-400 hover:text-slate-900" : "text-[#0f172a] hover:text-[#2563eb]"
+                  }`}
+                >
                   {offer.listingTitle}
                 </Link>
 
@@ -174,21 +190,28 @@ function BuyerOfferRows({ offers, onRefresh }) {
                   )}
                 </div>
 
-                {offer.counterAmount && (
+                {isCancelled && (
+                  <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200/80 p-2 text-xs font-semibold text-red-900">
+                    <Ban size={13} className="shrink-0 text-red-600" />
+                    <span>This offer was {offer.status.replace(/_/g, " ")}. Transaction closed.</span>
+                  </div>
+                )}
+
+                {offer.counterAmount && !isCancelled && (
                   <div className="mt-2 rounded-lg bg-purple-50 border border-purple-200 p-2.5 text-xs text-purple-900">
                     <span className="font-bold">Seller Counteroffer: {formatINR(offer.counterAmount)}</span>
                     {offer.sellerMessage && <p className="text-[11px] mt-0.5">"{offer.sellerMessage}"</p>}
                   </div>
                 )}
 
-                {offer.counterUnitPrice && (
+                {offer.counterUnitPrice && !isCancelled && (
                   <div className="mt-2 rounded-lg bg-purple-50 border border-purple-200 p-2.5 text-xs text-purple-900">
                     <span className="font-bold">Seller Counter: {offer.counterQuantity || offer.quantityRequested} units @ {formatINR(offer.counterUnitPrice)}/unit</span>
                     {offer.sellerMessage && <p className="text-[11px] mt-0.5">"{offer.sellerMessage}"</p>}
                   </div>
                 )}
 
-                {offer.status === "allocation_reserved" && offer.allocation && (
+                {offer.status === "allocation_reserved" && offer.allocation && !isCancelled && (
                   <div className="mt-2 rounded-lg bg-amber-50 border border-amber-300 p-2.5 text-xs text-amber-950 space-y-1">
                     <p className="font-bold text-amber-900">🎉 Reservation Active!</p>
                     <p>Allocated Quantity: <strong>{offer.allocation.allocatedQuantity}</strong> | Unit Price: <strong>{formatINR(offer.allocation.unitPrice)}</strong></p>
@@ -200,7 +223,10 @@ function BuyerOfferRows({ offers, onRefresh }) {
               <div className="flex flex-col sm:items-end gap-2 shrink-0">
                 <div className="text-right">
                   <div className="text-xs text-slate-500 font-medium">Total Offered Value</div>
-                  <div className="text-lg font-black text-[#0f172a]">{formatINR(offer.offeredAmount || offer.totalOfferValue)}</div>
+                  <div className={`text-lg font-black ${isCancelled ? "text-slate-400 line-through decoration-red-500" : "text-[#0f172a]"}`}>
+                    {formatINR(offer.offeredAmount || offer.totalOfferValue)}
+                    {isCancelled && <span className="ml-1 text-xs font-bold text-red-600">(Void)</span>}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 mt-1">
@@ -225,7 +251,7 @@ function BuyerOfferRows({ offers, onRefresh }) {
                     </>
                   )}
 
-                  {canModify && (
+                  {canModify && !isCancelled && (
                     <>
                       <button
                         type="button"
@@ -310,10 +336,10 @@ export default function BuyerDashboardPage() {
   const [state, setState] = useState({ loading: true, error: "", offers: [], watchlist: [] });
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [trackingTicket, setTrackingTicket] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [rejectionReason, setRejectionReason] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [trackingTicket, setTrackingTicket] = useState(null);
 
   const load = useCallback(async () => {
     setState((curr) => ({ ...curr, loading: true, error: "" }));

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  Ban,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -280,6 +281,7 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
     const isShortlisted = offer.status === "shortlisted";
     const isCountered = offer.status === "countered";
     const isRejected = offer.status === "rejected";
+    const isCancelled = ["rejected", "withdrawn", "declined", "buyer_declined", "cancelled", "seller_declined"].includes(offer.status);
 
     const buyerName = offer.buyer?.fullName || offer.buyerPublicProfile?.displayName || `Buyer #${offer.buyerId}`;
     const buyerRating = offer.buyer?.averageRating ?? offer.buyerPublicProfile?.averageRating ?? 0;
@@ -289,7 +291,11 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
     return (
       <div
         key={offer.id}
-        className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 shadow-xs"
+        className={`rounded-xl border p-4 transition shadow-xs ${
+          isCancelled
+            ? "border-red-200 bg-red-50/20"
+            : "border-slate-200 bg-white hover:border-slate-300"
+        }`}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -298,7 +304,7 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
             </div>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-slate-900 text-sm">{buyerName}</span>
+                <span className={`font-bold text-sm ${isCancelled ? "text-slate-700 line-through decoration-red-400" : "text-slate-900"}`}>{buyerName}</span>
                 {isVerified && (
                   <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                     <ShieldCheck size={11} className="text-emerald-600 shrink-0" /> Verified
@@ -329,41 +335,53 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
 
           <div className="text-right">
             <div className="text-xs text-slate-500 font-medium">Offered Amount</div>
-            <div className="text-xl font-black text-slate-900">{formatINR(offer.offeredAmount)}</div>
+            <div className={`text-xl font-black ${isCancelled ? "text-slate-400 line-through decoration-red-500" : "text-slate-900"}`}>
+              {formatINR(offer.offeredAmount)}
+            </div>
             <div
-              className={`text-[11px] font-bold ${offer.differenceFromAsking > 0
-                  ? "text-emerald-700"
-                  : offer.differenceFromAsking === 0
-                    ? "text-slate-600"
-                    : "text-amber-700"
-                }`}
+              className={`text-[11px] font-bold ${
+                isCancelled
+                  ? "text-red-600"
+                  : offer.differenceFromAsking > 0
+                    ? "text-emerald-700"
+                    : offer.differenceFromAsking === 0
+                      ? "text-slate-600"
+                      : "text-amber-700"
+              }`}
             >
-              {offer.differenceFromAsking > 0
-                ? `+${formatINR(offer.differenceFromAsking)} above asking`
-                : offer.differenceFromAsking === 0
-                  ? "At asking price"
-                  : `${formatINR(offer.differenceFromAsking)} below asking`}
+              {isCancelled
+                ? "Offer Cancelled / Void"
+                : offer.differenceFromAsking > 0
+                  ? `+${formatINR(offer.differenceFromAsking)} above asking`
+                  : offer.differenceFromAsking === 0
+                    ? "At asking price"
+                    : `${formatINR(offer.differenceFromAsking)} below asking`}
             </div>
           </div>
         </div>
 
         {/* Buyer message */}
-        {offer.buyerMessage && (
+        {offer.buyerMessage && !isCancelled && (
           <div className="mt-3 rounded-lg bg-slate-50 p-3 text-[12px] text-slate-700 space-y-1">
-            {offer.buyerMessage && (
-              <p className="flex items-start gap-1.5">
-                <MessageSquare size={13} className="shrink-0 text-slate-400 mt-0.5" />
-                <span>"{offer.buyerMessage}"</span>
-              </p>
-            )}
+            <p className="flex items-start gap-1.5">
+              <MessageSquare size={13} className="shrink-0 text-slate-400 mt-0.5" />
+              <span>"{offer.buyerMessage}"</span>
+            </p>
           </div>
         )}
 
         {/* Counteroffer info */}
-        {offer.counterAmount && (
+        {offer.counterAmount && !isCancelled && (
           <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50/60 p-3 text-[12px]">
             <div className="font-bold text-purple-900">Your Counteroffer: {formatINR(offer.counterAmount)}</div>
             {offer.sellerMessage && <p className="text-purple-800 text-[11px] mt-0.5">"{offer.sellerMessage}"</p>}
+          </div>
+        )}
+
+        {isCancelled && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200/80 p-2 text-xs font-semibold text-red-900">
+            <Ban size={13} className="shrink-0 text-red-600" />
+            <span>This offer was {offer.status.replace(/_/g, " ")}. No transaction will take place.</span>
           </div>
         )}
 
@@ -371,27 +389,27 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
-                  ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                  : isAccepted
-                    ? "bg-amber-100 text-amber-900 border border-amber-300"
-                    : isShortlisted
-                      ? "bg-indigo-100 text-indigo-900"
-                      : isCountered
-                        ? "bg-purple-100 text-purple-900"
-                        : isRejected
-                          ? "bg-red-100 text-red-900"
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-black uppercase ${
+                isCancelled
+                  ? "bg-red-600 text-white shadow-2xs"
+                  : isConfirmed
+                    ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                    : isAccepted
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                      : isShortlisted
+                        ? "bg-indigo-100 text-indigo-900"
+                        : isCountered
+                          ? "bg-purple-100 text-purple-900"
                           : "bg-slate-100 text-slate-700"
-                }`}
+              }`}
             >
-              {isConfirmed ? <CheckCircle2 size={12} /> : null}
-              {isAccepted ? <Clock size={12} /> : null}
+              {isCancelled ? <Ban size={11} /> : isConfirmed ? <CheckCircle2 size={12} /> : isAccepted ? <Clock size={12} /> : null}
               {offer.status.replace(/_/g, " ")}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!isConfirmed && !isRejected && offer.status !== "withdrawn" && (
+            {!isConfirmed && !isCancelled && (
               <>
                 {!isShortlisted && !isAccepted && (
                   <button
@@ -537,6 +555,7 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
                     const isConfirmed = offer.status === "confirmed";
                     const isCountered = offer.status === "countered";
                     const isRejected = offer.status === "rejected";
+                    const isCancelled = ["rejected", "withdrawn", "declined", "cancelled", "buyer_declined", "seller_declined"].includes(offer.status);
 
                     const buyerName = offer.buyer?.fullName || offer.buyerPublicProfile?.displayName || `Buyer #${offer.buyerId}`;
                     const buyerRating = offer.buyer?.averageRating ?? offer.buyerPublicProfile?.averageRating ?? 0;
@@ -544,7 +563,12 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
                     const isVerified = (offer.buyer?.verificationStatus || offer.buyerPublicProfile?.verificationStatus) === "verified";
 
                     return (
-                      <div key={offer.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+                      <div
+                        key={offer.id}
+                        className={`rounded-xl border p-4 shadow-xs space-y-3 ${
+                          isCancelled ? "border-red-200 bg-red-50/20" : "border-slate-200 bg-white"
+                        }`}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800 text-xs shadow-2xs">
@@ -552,7 +576,7 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-xs font-bold text-slate-900">{buyerName}</span>
+                                <span className={`text-xs font-bold ${isCancelled ? "text-slate-700 line-through decoration-red-400" : "text-slate-900"}`}>{buyerName}</span>
                                 {isVerified && (
                                   <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
                                 )}
@@ -578,38 +602,51 @@ export function SellerOffersModal({ listing, isOpen, onClose, onRefresh }) {
 
                           <div className="sm:text-right">
                             <div className="text-xs text-slate-500">Total Offer Value</div>
-                            <div className="text-lg font-black text-slate-900">{formatINR(offer.totalOfferValue)}</div>
-                            <div className={`text-[11px] font-bold ${offer.diffFromAsking >= 0 ? "text-emerald-700" : "text-amber-700"}`}>
-                              {offer.diffFromAsking >= 0 ? `+${formatINR(offer.diffFromAsking)} vs asking/unit` : `${formatINR(offer.diffFromAsking)} vs asking/unit`}
+                            <div className={`text-lg font-black ${isCancelled ? "text-slate-400 line-through decoration-red-500" : "text-slate-900"}`}>{formatINR(offer.totalOfferValue)}</div>
+                            <div className={`text-[11px] font-bold ${isCancelled ? "text-red-600" : offer.diffFromAsking >= 0 ? "text-emerald-700" : "text-amber-700"}`}>
+                              {isCancelled
+                                ? "Cancelled / Void"
+                                : offer.diffFromAsking >= 0
+                                  ? `+${formatINR(offer.diffFromAsking)} vs asking/unit`
+                                  : `${formatINR(offer.diffFromAsking)} vs asking/unit`}
                             </div>
                           </div>
                         </div>
 
-                        {offer.buyerMessage && (
+                        {offer.buyerMessage && !isCancelled && (
                           <div className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                             "{offer.buyerMessage}"
+                          </div>
+                        )}
+
+                        {isCancelled && (
+                          <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200/80 p-2 text-xs font-semibold text-red-900">
+                            <Ban size={13} className="shrink-0 text-red-600" />
+                            <span>This multi-unit offer was {offer.status.replace(/_/g, " ")}. Transaction closed.</span>
                           </div>
                         )}
 
                         {/* Actions */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
-                                ? "bg-emerald-100 text-emerald-800"
-                                : isReserved
-                                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                                  : isCountered
-                                    ? "bg-purple-100 text-purple-900"
-                                    : isRejected
-                                      ? "bg-red-100 text-red-900"
+                            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-black uppercase ${
+                              isCancelled
+                                ? "bg-red-600 text-white shadow-2xs"
+                                : isConfirmed
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : isReserved
+                                    ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                    : isCountered
+                                      ? "bg-purple-100 text-purple-900"
                                       : "bg-slate-100 text-slate-700"
-                              }`}
+                            }`}
                           >
+                            {isCancelled && <Ban size={11} />}
                             {offer.status.replace(/_/g, " ")}
                           </span>
 
                           <div className="flex flex-wrap items-center gap-2">
-                            {!isConfirmed && !isReserved && !isRejected && offer.status !== "cancelled" && (
+                            {!isConfirmed && !isReserved && !isCancelled && (
                               <>
                                 <button
                                   type="button"

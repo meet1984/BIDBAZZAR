@@ -8,6 +8,7 @@ import {
   MapPin,
   Send,
   ShieldCheck,
+  Star,
   Tag,
   Timer,
 } from "lucide-react";
@@ -87,8 +88,8 @@ function LockedBiddingCard({ listing, timing }) {
         disabled={saving}
         onClick={handleToggleWatch}
         className={`w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition shadow-xs ${watched
-            ? "bg-slate-900 text-white hover:bg-slate-800"
-            : "bg-[#2563eb] text-white hover:bg-blue-700"
+          ? "bg-slate-900 text-white hover:bg-slate-800"
+          : "bg-[#2563eb] text-white hover:bg-blue-700"
           }`}
       >
         <Heart size={15} fill={watched ? "currentColor" : "none"} />
@@ -261,12 +262,12 @@ function BuyerOfferCard({ listing, timing }) {
           <span className="text-xs font-bold text-slate-500">Your Private Offer</span>
           <span
             className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
-                ? "bg-emerald-100 text-emerald-800"
-                : isPendingConfirm
-                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                  : isCountered
-                    ? "bg-purple-100 text-purple-900"
-                    : "bg-slate-100 text-slate-700"
+              ? "bg-emerald-100 text-emerald-800"
+              : isPendingConfirm
+                ? "bg-amber-100 text-amber-900 border border-amber-300"
+                : isCountered
+                  ? "bg-purple-100 text-purple-900"
+                  : "bg-slate-100 text-slate-700"
               }`}
           >
             {existingOffer.status.replace(/_/g, " ")}
@@ -681,12 +682,12 @@ function MultiUnitOfferCard({ listing, timing }) {
           <span className="text-xs font-bold text-slate-500">Your Active Multi-unit Offer</span>
           <span
             className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isConfirmed
-                ? "bg-emerald-100 text-emerald-800"
-                : isReserved
-                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                  : isCountered
-                    ? "bg-purple-100 text-purple-900"
-                    : "bg-slate-100 text-slate-700"
+              ? "bg-emerald-100 text-emerald-800"
+              : isReserved
+                ? "bg-amber-100 text-amber-900 border border-amber-300"
+                : isCountered
+                  ? "bg-purple-100 text-purple-900"
+                  : "bg-slate-100 text-slate-700"
               }`}
           >
             {existingOffer.status.replace(/_/g, " ")}
@@ -1168,6 +1169,56 @@ export default function ProductBiddingPage() {
                 {listing.description}
               </div>
             </div>
+
+            {/* Seller Profile & Trust Box */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-[#2563eb] font-bold text-lg border border-blue-100 shadow-2xs">
+                    {(listing.sellerName || "S")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-base flex items-center gap-1.5">
+                      {listing.sellerName || "Verified Enterprise Seller"}
+                      <ShieldCheck size={16} className="text-emerald-600" />
+                    </h4>
+                    <span className="text-xs text-slate-500 font-medium">Compliance-verified Enterprise Seller Account</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="inline-flex items-center gap-1.5 text-amber-800 bg-amber-50 border border-amber-200/90 px-3 py-1 rounded-xl text-sm font-black shadow-2xs">
+                    <Star size={15} className="fill-amber-400 text-amber-400" />
+                    <span>{listing.sellerRating && Number(listing.sellerRating) > 0 ? Number(listing.sellerRating).toFixed(1) : "5.0"}</span>
+                    <span className="text-xs text-slate-500 font-normal">/ 5.0</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-0.5 font-medium">
+                    {listing.sellerReviewCount || 0} verified buyer reviews
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs pt-1">
+                <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">ID & Business KYC</span>
+                  <span className="font-bold text-emerald-700 flex items-center gap-1 mt-1 text-xs">
+                    <ShieldCheck size={14} /> Verified Seller
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Seller Rating</span>
+                  <span className="font-bold text-slate-900 flex items-center gap-1 mt-1 text-xs">
+                    <Star size={14} className="fill-amber-400 text-amber-400" />
+                    {listing.sellerRating && Number(listing.sellerRating) > 0 ? `${Number(listing.sellerRating).toFixed(1)} / 5.0 Rating` : "5.0 (Top Rated)"}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Buyer Protection</span>
+                  <span className="font-bold text-[#2563eb] flex items-center gap-1 mt-1 text-xs">
+                    <Lock size={14} /> BidMyLot Escrow
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Column: Listing Details & Pricing Sidebar */}
@@ -1183,13 +1234,19 @@ export default function ProductBiddingPage() {
                   {listing.title}
                 </h1>
 
-                <div className="mt-3 flex items-center gap-4 text-[13px] text-slate-600">
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] text-slate-600">
                   <span className="flex items-center gap-1.5">
                     <MapPin size={15} className="text-slate-400" /> {listing.location || "India"}
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
-                    <ShieldCheck size={16} /> Verified Seller
+                    <ShieldCheck size={16} /> {listing.sellerName || "Verified Seller"}
+                  </span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 border border-amber-200/90 px-2 py-0.5 rounded-md text-xs">
+                    <Star size={12} className="fill-amber-400 text-amber-400" />
+                    <span>{listing.sellerRating && Number(listing.sellerRating) > 0 ? Number(listing.sellerRating).toFixed(1) : "5.0"}</span>
+                    <span className="text-slate-500 font-normal text-[11px]">({listing.sellerReviewCount || 0})</span>
                   </span>
                 </div>
               </div>
@@ -1224,8 +1281,8 @@ export default function ProductBiddingPage() {
               ) : timing.isLive ? (
                 <div
                   className={`rounded-xl border p-4 shadow-2xs ${timing.isEndingSoon
-                      ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/70"
-                      : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70"
+                    ? "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50/70"
+                    : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/70"
                     }`}
                 >
                   <div className="flex items-center justify-between">

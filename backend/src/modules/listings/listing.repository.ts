@@ -11,6 +11,8 @@ export interface FullListingRecord extends ListingRecord {
   subcategoryName: string | null;
   subcategorySlug: string | null;
   sellerName: string | null;
+  sellerRating: number;
+  sellerReviewCount: number;
   publicDisplayStatus: "upcoming" | "live" | "ending-soon" | "closed";
   isWatched: boolean;
   primaryImageUrl?: string | null;
@@ -80,6 +82,8 @@ function listingFromRow(row: RowDataPacket): FullListingRecord {
     subcategoryName: row.subcategory_name == null ? null : String(row.subcategory_name),
     subcategorySlug: row.subcategory_slug == null ? null : String(row.subcategory_slug),
     sellerName: row.seller_name == null ? null : String(row.seller_name),
+    sellerRating: row.seller_rating == null ? 0 : Number(row.seller_rating),
+    sellerReviewCount: row.seller_review_count == null ? 0 : Number(row.seller_review_count),
     publicDisplayStatus: String(row.public_display_status ?? "closed") as FullListingRecord["publicDisplayStatus"],
     isWatched: Boolean(row.is_watched),
     primaryImageUrl: row.primary_image_url ? String(row.primary_image_url) : null,
@@ -104,7 +108,7 @@ export class ListingRepository {
     const parameters: unknown[] = [userId ?? 0];
     const where = [
       "x.deleted_at IS NULL",
-      "x.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold')",
+      "x.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold', 'unsold')",
     ];
 
     if (query.q) {
@@ -189,6 +193,16 @@ export class ListingRepository {
                c.name AS category_name, c.slug AS category_slug,
                sc.name AS subcategory_name, sc.slug AS subcategory_slug,
                sp.business_name AS seller_name,
+               (
+                 SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                 FROM reviews r
+                 WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+               ) AS seller_rating,
+               (
+                 SELECT COUNT(*)
+                 FROM reviews r
+                 WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+               ) AS seller_review_count,
                (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
                ${publicStatusExpression("l")} AS public_display_status,
                EXISTS(
@@ -265,6 +279,16 @@ export class ListingRepository {
               c.name AS category_name, c.slug AS category_slug,
               sc.name AS subcategory_name, sc.slug AS subcategory_slug,
               sp.business_name AS seller_name,
+              (
+                SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_rating,
+              (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_review_count,
               (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
               ${publicStatusExpression("l")} AS public_display_status,
               EXISTS(
@@ -282,7 +306,7 @@ export class ListingRepository {
        LEFT JOIN subcategories sc ON sc.id = l.subcategory_id
        LEFT JOIN seller_profiles sp ON sp.account_id = l.seller_id
        WHERE (l.public_slug = ? OR l.listing_reference = ? OR l.id = ?)
-         AND l.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold')
+         AND l.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold', 'unsold')
          AND l.deleted_at IS NULL
        LIMIT 1`,
       [userId ?? 0, identifier, identifier, Number(identifier) || 0],
@@ -298,6 +322,16 @@ export class ListingRepository {
       `SELECT l.*, c.name AS category_name, c.slug AS category_slug,
               sc.name AS subcategory_name, sc.slug AS subcategory_slug,
               sp.business_name AS seller_name,
+              (
+                SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_rating,
+              (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_review_count,
               (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
               ${publicStatusExpression("l")} AS public_display_status,
               EXISTS(SELECT 1 FROM listing_watchlists w WHERE w.listing_id = l.id AND w.account_id = ?) AS is_watched,
@@ -313,7 +347,7 @@ export class ListingRepository {
        LEFT JOIN subcategories sc ON sc.id = l.subcategory_id
        LEFT JOIN seller_profiles sp ON sp.account_id = l.seller_id
        WHERE l.id IN (?)
-         AND l.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold')
+         AND l.review_status IN ('approved', 'scheduled', 'open', 'completed', 'sold', 'partially_sold', 'unsold')
          AND l.deleted_at IS NULL`,
       [userId, ids],
     );
@@ -328,6 +362,16 @@ export class ListingRepository {
               c.name AS category_name, c.slug AS category_slug,
               sc.name AS subcategory_name, sc.slug AS subcategory_slug,
               sp.business_name AS seller_name,
+              (
+                SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_rating,
+              (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_review_count,
               (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
               ${publicStatusExpression("l")} AS public_display_status,
               0 AS is_watched,
@@ -355,6 +399,16 @@ export class ListingRepository {
               c.name AS category_name, c.slug AS category_slug,
               sc.name AS subcategory_name, sc.slug AS subcategory_slug,
               sp.business_name AS seller_name,
+              (
+                SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_rating,
+              (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_review_count,
               (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
               ${publicStatusExpression("l")} AS public_display_status,
               0 AS is_watched,
@@ -383,6 +437,16 @@ export class ListingRepository {
               c.name AS category_name, c.slug AS category_slug,
               sc.name AS subcategory_name, sc.slug AS subcategory_slug,
               sp.business_name AS seller_name,
+              (
+                SELECT COALESCE(ROUND(AVG(r.rating_score), 1), 0)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_rating,
+              (
+                SELECT COUNT(*)
+                FROM reviews r
+                WHERE r.reviewee_id = l.seller_id AND r.is_published = 1 AND r.direction = 'buyer_to_seller'
+              ) AS seller_review_count,
               (SELECT li.image_url FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.is_primary DESC, li.display_order ASC, li.id ASC LIMIT 1) AS primary_image_url,
               ${publicStatusExpression("l")} AS public_display_status,
               0 AS is_watched,

@@ -40,6 +40,8 @@ function mockListing(overrides: Partial<FullListingRecord> = {}): FullListingRec
     subcategoryName: "Machinery",
     subcategorySlug: "machinery",
     sellerName: "Test Seller",
+    sellerRating: 5.0,
+    sellerReviewCount: 1,
     publicDisplayStatus: "live",
     isWatched: false,
     ...overrides,

@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Star,
   Timer,
   UserRoundCheck,
 } from "lucide-react";
@@ -293,12 +294,17 @@ function AuctionCard({ auction }) {
           >
             {auction.title}
           </h3>
-          <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
-            <span className="flex items-center gap-1 truncate">
-              <Car className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{categoryName}</span>
+          <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1 truncate text-slate-500 font-medium">
+              <span className="truncate max-w-[120px]">{auction.sellerName || "Verified Seller"}</span>
             </span>
-            <span className={`shrink-0 font-semibold ${isClosed ? "text-slate-500" : "text-slate-600"}`}>Verified Lot</span>
+            <span className="inline-flex items-center gap-1 shrink-0 font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md text-[11px]">
+              <Star size={11} className="fill-amber-400 text-amber-400" />
+              <span>{auction.sellerRating && Number(auction.sellerRating) > 0 ? Number(auction.sellerRating).toFixed(1) : "5.0"}</span>
+              <span className="text-[10px] text-slate-500 font-normal">
+                ({auction.sellerReviewCount || 0})
+              </span>
+            </span>
           </div>
         </div>
 
