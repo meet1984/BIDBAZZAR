@@ -52,7 +52,27 @@ import { compressImage } from "../lib/imageCompression";
 
 export default function AdminDashboardPage() {
   const { user: currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState("auctions"); // 'auctions' | 'overview' | 'users' | 'support'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      const validTabs = ["auctions", "categories", "verification", "overview", "users", "support", "howItWorks", "aboutPhotos"];
+      if (tabParam && validTabs.includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return "auctions";
+  });
+
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState(null, "", url.pathname + url.search);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState("");
@@ -736,47 +756,13 @@ export default function AdminDashboardPage() {
     );
   });
 
-  const sidebarExtraNav = (
-    <div className="mt-4 border-t border-slate-200 pt-4 space-y-1">
-      <p className="px-3 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-        Admin Sections
-      </p>
-      {[
-        { id: "auctions", label: "Listing Review Queue", icon: Gavel },
-        { id: "categories", label: "Category Hierarchy", icon: Layers },
-        { id: "verification", label: "Verification Queue", icon: UserCheck },
-        { id: "overview", label: "Overview & Moderation", icon: Shield },
-        { id: "users", label: "Account Management", icon: Users },
-        { id: "support", label: "Support Tickets", icon: LifeBuoy },
-        { id: "howItWorks", label: "How It Works Banner", icon: FileText },
-        { id: "aboutPhotos", label: "About Page Photos", icon: ImageIcon },
-      ].map((item) => {
-        const Icon = item.icon;
-        const isActive = activeTab === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center gap-2 rounded px-3 py-2 text-xs font-semibold transition-colors ${isActive
-              ? "bg-[#2563eb] text-white font-bold"
-              : "text-slate-600 hover:bg-slate-100 hover:text-[#0f172a]"
-              }`}
-          >
-            <Icon size={14} />
-            <span className="truncate">{item.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-
   return (
     <DashboardLayout
       role="admin"
       title="Platform Administration Command Center"
       description="Full operational authority over marketplace auctions, user accounts, security controls, support inquiries, and page content."
-      sidebarExtra={sidebarExtraNav}
+      activeTab={activeTab}
+      onSelectTab={handleTabChange}
     >
       <CreateUserModal
         isOpen={createUserModalOpen}
@@ -852,7 +838,7 @@ export default function AdminDashboardPage() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 border-b-2 py-3 text-xs font-extrabold transition-all ${isActive
                   ? "border-[#2563eb] text-[#2563eb]"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"

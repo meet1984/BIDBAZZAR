@@ -44,6 +44,8 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 body {

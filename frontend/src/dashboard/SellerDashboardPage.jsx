@@ -73,7 +73,25 @@ function SaleModeBadge({ saleMode }) {
 }
 
 export default function SellerDashboardPage() {
-  const [activeTab, setActiveTab] = useState("auctions");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "support") return "support";
+    }
+    return "auctions";
+  });
+
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState(null, "", url.pathname + url.search);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, []);
+
   const [state, setState] = useState({ loading: true, error: "", items: [] });
   const [activeFormAuction, setActiveFormAuction] = useState(null);
   const [previewListing, setPreviewListing] = useState(null);
@@ -168,6 +186,8 @@ export default function SellerDashboardPage() {
       role="seller"
       title="Seller Workspace"
       description="Manage your marketplace listings, review admin feedback, and track support requests."
+      activeTab={activeTab}
+      onSelectTab={handleTabChange}
     >
       <div className="space-y-6">
         <VerificationStatusBanner
@@ -187,7 +207,7 @@ export default function SellerDashboardPage() {
         <div className="flex border-b border-slate-200">
           <button
             type="button"
-            onClick={() => setActiveTab("auctions")}
+            onClick={() => handleTabChange("auctions")}
             className={`border-b-2 px-6 py-3 text-sm font-bold transition ${activeTab === "auctions"
               ? "border-[#2563eb] text-[#2563eb]"
               : "border-transparent text-slate-500 hover:text-slate-700"
@@ -198,7 +218,7 @@ export default function SellerDashboardPage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("support")}
+            onClick={() => handleTabChange("support")}
             className={`border-b-2 px-6 py-3 text-sm font-bold transition ${activeTab === "support"
               ? "border-[#2563eb] text-[#2563eb]"
               : "border-transparent text-slate-500 hover:text-slate-700"

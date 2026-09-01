@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Ban, CheckCircle2, Clock, LifeBuoy } from "lucide-react";
+import { Ban, CheckCircle2, Clock, Eye, LifeBuoy, Plus } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage, formatDateTime, formatINR } from "../lib/format";
 import { EmptyState, ErrorState, Link, LoadingState, SupportComplaintModal, TicketTrackerModal, VerificationStatusBanner } from "../components";
@@ -332,7 +332,25 @@ function BuyerOfferRows({ offers, onRefresh }) {
 
 export default function BuyerDashboardPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("main"); // "main" | "support"
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "support") return "support";
+    }
+    return "main";
+  });
+
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tabId);
+      window.history.replaceState(null, "", url.pathname + url.search);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, []);
+
   const [state, setState] = useState({ loading: true, error: "", offers: [], watchlist: [] });
   const [tickets, setTickets] = useState([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
@@ -369,7 +387,6 @@ export default function BuyerDashboardPage() {
     }
   }, []);
 
-
   const loadTickets = useCallback(async () => {
     setTicketsLoading(true);
     try {
@@ -404,13 +421,13 @@ export default function BuyerDashboardPage() {
           : "View your submitted private offers, counteroffers, and saved watchlist."
       }
       activeTab={activeTab}
-      onSelectTab={setActiveTab}
+      onSelectTab={handleTabChange}
     >
       {/* Top Tab Bar */}
       <div className="mb-6 flex border-b border-slate-200">
         <button
           type="button"
-          onClick={() => setActiveTab("main")}
+          onClick={() => handleTabChange("main")}
           className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 ${activeTab !== "support"
               ? "border-[#2563eb] text-[#2563eb]"
               : "border-transparent text-slate-500 hover:text-slate-700"
@@ -420,7 +437,7 @@ export default function BuyerDashboardPage() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("support")}
+          onClick={() => handleTabChange("support")}
           className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === "support"
               ? "border-[#2563eb] text-[#2563eb]"
               : "border-transparent text-slate-500 hover:text-slate-700"

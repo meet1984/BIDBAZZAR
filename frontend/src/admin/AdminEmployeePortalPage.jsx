@@ -824,6 +824,13 @@ export default function AdminEmployeePortalPage() {
       .catch((requestError) => setError(errorMessage(requestError)));
   }, []);
 
+  const handleTabChange = (tabKey) => {
+    setTab(tabKey);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  };
+
   if (!permissions) {
     return (
       <DashboardLayout role="admin" title="Employee Operations Portal" description="Loading assigned operational capabilities.">
@@ -864,7 +871,7 @@ export default function AdminEmployeePortalPage() {
               <button
                 key={config.key}
                 type="button"
-                onClick={() => setTab(config.key)}
+                onClick={() => handleTabChange(config.key)}
                 className={`w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold transition-all text-left ${
                   isActive
                     ? "bg-[#0f172a] text-white shadow-xs"
@@ -927,7 +934,7 @@ export default function AdminEmployeePortalPage() {
                 <button
                   key={config.key}
                   type="button"
-                  onClick={() => setTab(config.key)}
+                  onClick={() => handleTabChange(config.key)}
                   className={`rounded-xl border p-4 text-left transition-all ${
                     isActive
                       ? "border-[#2563eb] bg-blue-50/50 shadow-xs ring-1 ring-[#2563eb]"
@@ -973,7 +980,7 @@ export default function AdminEmployeePortalPage() {
               <button
                 key={permKey}
                 type="button"
-                onClick={() => setTab(permKey)}
+                onClick={() => handleTabChange(permKey)}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all ${
                   isActive
                     ? "bg-[#0f172a] text-white shadow-xs"
