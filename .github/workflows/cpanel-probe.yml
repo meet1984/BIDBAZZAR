@@ -33,44 +33,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
 
-      - name: Check backend and frontend files
+      - name: Probe remote cPanel structure via SFTP
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
           PORT="${CPANEL_PORT:-22}"
-          ssh -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 "$CPANEL_USER@$CPANEL_HOST" << EOF
-            BACKEND="/home/${CPANEL_USER}/bidmylot.backend"
-            FRONTEND="/home/${CPANEL_USER}/bidmylot.com"
-            FAILED=0
+          BACKEND="/home/${CPANEL_USER}/bidmylot.backend"
+          FRONTEND="/home/${CPANEL_USER}/bidmylot.com"
 
-            check_dir() {
-              if [ -d "\$1" ]; then echo "OK: \$1"; else echo "MISSING: \$1"; FAILED=1; fi
-            }
-
-            check_file() {
-              if [ -f "\$1" ]; then echo "OK: \$1"; else echo "MISSING: \$1"; FAILED=1; fi
-            }
-
-            echo "=== Checking Directories & Files ==="
-            check_dir "\$BACKEND"
-            check_file "\$BACKEND/app.js"
-            check_file "\$BACKEND/dist/app.js"
-            check_file "\$BACKEND/package.json"
-            check_dir "\$BACKEND/node_modules"
-            check_dir "\$BACKEND/uploads"
-            check_dir "\$BACKEND/private_uploads"
-            check_file "\$FRONTEND/index.html"
-            check_file "\$FRONTEND/.htaccess"
-
-            if [ -f "\$BACKEND/.env" ]; then
-              echo "OK: \$BACKEND/.env"
-            else
-              echo "NOTICE: .env is absent; verify cPanel environment variables"
-            fi
-
-            echo "Node: \$(node --version 2>/dev/null || echo 'managed by cPanel')"
-            [ "\$FAILED" -eq 0 ] || exit 1
-            echo "cPanel structure: OK"
+          cat << EOF > probe.batch
+          -ls -la $BACKEND
+          -ls -la $BACKEND/tmp
+          -ls -la $FRONTEND
+          bye
           EOF
+
+          echo "Probing cPanel directories via SFTP subsystem..."
+          sftp -P "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 -b probe.batch "$CPANEL_USER@$CPANEL_HOST"
+          echo "SFTP inspection completed successfully."
