@@ -12,44 +12,65 @@ jobs:
     environment: production
 
     steps:
-      - name: Check backend and frontend files
-        uses: appleboy/ssh-action@v1
+      - name: Validate Diagnostic Secrets
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+        run: |
+          MISSING=""
+          [ -z "$CPANEL_HOST" ] && MISSING="$MISSING CPANEL_HOST"
+          [ -z "$CPANEL_USER" ] && MISSING="$MISSING CPANEL_USER"
+          [ -z "$CPANEL_SSH_KEY" ] && MISSING="$MISSING CPANEL_SSH_KEY"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing required diagnostic secrets:$MISSING. Check GitHub Settings -> Environments -> production OR Repository Secrets."
+            exit 1
+          fi
+          echo "All required diagnostic secrets are present."
+
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          script: |
-            BACKEND=/home/dcgixwyd/bidmylot.backend
-            FRONTEND=/home/dcgixwyd/bidmylot.com
+          ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
+
+      - name: Check backend and frontend files
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          PORT="${CPANEL_PORT:-22}"
+          ssh -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 "$CPANEL_USER@$CPANEL_HOST" << EOF
+            BACKEND="/home/${CPANEL_USER}/bidmylot.backend"
+            FRONTEND="/home/${CPANEL_USER}/bidmylot.com"
             FAILED=0
 
             check_dir() {
-              if [ -d "$1" ]; then echo "OK: $1"; else echo "MISSING: $1"; FAILED=1; fi
+              if [ -d "\$1" ]; then echo "OK: \$1"; else echo "MISSING: \$1"; FAILED=1; fi
             }
 
             check_file() {
-              if [ -f "$1" ]; then echo "OK: $1"; else echo "MISSING: $1"; FAILED=1; fi
+              if [ -f "\$1" ]; then echo "OK: \$1"; else echo "MISSING: \$1"; FAILED=1; fi
             }
 
-            check_dir "$BACKEND"
-            check_file "$BACKEND/app.js"
-            check_file "$BACKEND/dist/app.js"
-            check_file "$BACKEND/package.json"
-            check_dir "$BACKEND/node_modules"
-            check_dir "$BACKEND/uploads"
-            check_dir "$BACKEND/private_uploads"
-            check_file "$FRONTEND/index.html"
-            check_file "$FRONTEND/.htaccess"
+            echo "=== Checking Directories & Files ==="
+            check_dir "\$BACKEND"
+            check_file "\$BACKEND/app.js"
+            check_file "\$BACKEND/dist/app.js"
+            check_file "\$BACKEND/package.json"
+            check_dir "\$BACKEND/node_modules"
+            check_dir "\$BACKEND/uploads"
+            check_dir "\$BACKEND/private_uploads"
+            check_file "\$FRONTEND/index.html"
+            check_file "\$FRONTEND/.htaccess"
 
-            if [ -f "$BACKEND/.env" ]; then
-              echo "OK: $BACKEND/.env"
+            if [ -f "\$BACKEND/.env" ]; then
+              echo "OK: \$BACKEND/.env"
             else
               echo "NOTICE: .env is absent; verify cPanel environment variables"
             fi
 
-            echo "Node: $(node --version 2>/dev/null || echo 'managed by cPanel')"
-            [ "$FAILED" -eq 0 ] || exit 1
+            echo "Node: \$(node --version 2>/dev/null || echo 'managed by cPanel')"
+            [ "\$FAILED" -eq 0 ] || exit 1
             echo "cPanel structure: OK"
-
-# Read-only check: no deployment, migration, resta
+          EOF

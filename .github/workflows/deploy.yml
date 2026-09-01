@@ -18,9 +18,11 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -30,7 +32,24 @@ jobs:
           npm ci
           npm run lint
           npm run typecheck
+          npm run test
           npm run build
+
+      - name: Validate Deployment Secrets
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+        run: |
+          MISSING=""
+          [ -z "$CPANEL_HOST" ] && MISSING="$MISSING CPANEL_HOST"
+          [ -z "$CPANEL_USER" ] && MISSING="$MISSING CPANEL_USER"
+          [ -z "$CPANEL_SSH_KEY" ] && MISSING="$MISSING CPANEL_SSH_KEY"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing required deployment secrets:$MISSING. Ensure they are configured in GitHub Settings -> Environments -> production OR Repository Secrets."
+            exit 1
+          fi
+          echo "All required deployment secrets are present."
 
       - name: Start SSH agent and add key
         uses: webfactory/ssh-agent@v0.9.0
@@ -51,9 +70,16 @@ jobs:
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          SSH_CMD="ssh -p $CPANEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
-          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p /home/dcgixwyd/bidmylot.backend"
-          tar -czf - -C deploy/backend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C /home/dcgixwyd/bidmylot.backend"
+          PORT="${CPANEL_PORT:-22}"
+          TARGET_DIR="/home/${CPANEL_USER}/bidmylot.backend"
+          SSH_CMD="ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15"
+
+          echo "Ensuring remote directory $TARGET_DIR exists on $CPANEL_HOST:$PORT..."
+          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p $TARGET_DIR"
+
+          echo "Streaming backend archive to $TARGET_DIR..."
+          tar -czf - -C deploy/backend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C $TARGET_DIR"
+          echo "Backend upload completed."
 
       - name: Restart Passenger
         env:
@@ -61,25 +87,26 @@ jobs:
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          ssh -p "$CPANEL_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
+          PORT="${CPANEL_PORT:-22}"
+          ssh -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 "$CPANEL_USER@$CPANEL_HOST" << EOF
             set -eu
-            BACKEND=/home/dcgixwyd/bidmylot.backend
-            echo "Checking $BACKEND"
+            BACKEND="/home/${CPANEL_USER}/bidmylot.backend"
+            echo "Checking \$BACKEND structure..."
 
-            [ -d "$BACKEND" ] || { echo "ERROR: backend directory is missing"; exit 1; }
-            [ -f "$BACKEND/app.js" ] || { echo "ERROR: app.js is missing"; exit 1; }
-            [ -f "$BACKEND/dist/app.js" ] || { echo "ERROR: dist/app.js is missing"; exit 1; }
-            [ -f "$BACKEND/package.json" ] || { echo "ERROR: package.json is missing"; exit 1; }
-            [ -d "$BACKEND/node_modules" ] || { echo "ERROR: node_modules is missing"; exit 1; }
+            [ -d "\$BACKEND" ] || { echo "ERROR: backend directory is missing"; exit 1; }
+            [ -f "\$BACKEND/app.js" ] || { echo "ERROR: app.js is missing"; exit 1; }
+            [ -f "\$BACKEND/dist/app.js" ] || { echo "ERROR: dist/app.js is missing"; exit 1; }
+            [ -f "\$BACKEND/package.json" ] || { echo "ERROR: package.json is missing"; exit 1; }
+            [ -d "\$BACKEND/node_modules" ] || { echo "ERROR: node_modules is missing"; exit 1; }
 
-            if [ -f "$BACKEND/.env" ]; then
+            if [ -f "\$BACKEND/.env" ]; then
               echo "Environment: .env file found"
             else
-              echo "Environment: .env not found; cPanel variables must be configured"
+              echo "Environment: .env not found; ensure cPanel environment variables or .env file are configured"
             fi
 
-            mkdir -p "$BACKEND/uploads" "$BACKEND/private_uploads" "$BACKEND/tmp"
-            touch "$BACKEND/tmp/restart.txt"
+            mkdir -p "\$BACKEND/uploads" "\$BACKEND/private_uploads" "\$BACKEND/tmp"
+            touch "\$BACKEND/tmp/restart.txt"
             echo "Passenger restart requested successfully"
           EOF
 
@@ -94,12 +121,13 @@ jobs:
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          SSH_CMD="ssh -p $CPANEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
-          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p /home/dcgixwyd/bidmylot.com"
-          tar -czf - -C deploy/frontend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C /home/dcgixwyd/bidmylot.com"
+          PORT="${CPANEL_PORT:-22}"
+          TARGET_DIR="/home/${CPANEL_USER}/bidmylot.com"
+          SSH_CMD="ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15"
 
-# Required GitHub secrets:
-# CPANEL_HOST, CPANEL_USER, CPANEL_SSH_KEY, CPANEL_PORT
-#
-# Create /home/dcgixwyd/bidmylot.backend/.env manually before the first deploy.
-# Database migrations are manual and are never run automatically in CI/CD.
+          echo "Ensuring remote directory $TARGET_DIR exists on $CPANEL_HOST:$PORT..."
+          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p $TARGET_DIR"
+
+          echo "Streaming frontend archive to $TARGET_DIR..."
+          tar -czf - -C deploy/frontend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C $TARGET_DIR"
+          echo "Frontend upload completed."
