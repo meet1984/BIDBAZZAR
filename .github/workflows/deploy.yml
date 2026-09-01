@@ -32,12 +32,10 @@ jobs:
           npm run typecheck
           npm run build
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.CPANEL_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p "${{ secrets.CPANEL_PORT }}" -H "${{ secrets.CPANEL_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
 
       - name: Prepare backend
         run: |
@@ -48,15 +46,22 @@ jobs:
           rm -rf deploy/backend/node_modules/@bidmylot
 
       - name: Upload backend
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
-          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "mkdir -p /home/dcgixwyd/bidmylot.backend"
-          tar -czf - -C deploy/backend . | $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "tar -xzf - -C /home/dcgixwyd/bidmylot.backend"
+          SSH_CMD="ssh -p $CPANEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p /home/dcgixwyd/bidmylot.backend"
+          tar -czf - -C deploy/backend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C /home/dcgixwyd/bidmylot.backend"
 
       - name: Restart Passenger
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
-          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} << 'EOF'
+          ssh -p "$CPANEL_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes "$CPANEL_USER@$CPANEL_HOST" << 'EOF'
             set -eu
             BACKEND=/home/dcgixwyd/bidmylot.backend
             echo "Checking $BACKEND"
@@ -84,10 +89,14 @@ jobs:
           cp -r frontend/dist/. deploy/frontend/
 
       - name: Upload frontend
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
         run: |
-          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
-          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "mkdir -p /home/dcgixwyd/bidmylot.com"
-          tar -czf - -C deploy/frontend . | $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "tar -xzf - -C /home/dcgixwyd/bidmylot.com"
+          SSH_CMD="ssh -p $CPANEL_PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+          $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "mkdir -p /home/dcgixwyd/bidmylot.com"
+          tar -czf - -C deploy/frontend . | $SSH_CMD "$CPANEL_USER@$CPANEL_HOST" "tar -xzf - -C /home/dcgixwyd/bidmylot.com"
 
 # Required GitHub secrets:
 # CPANEL_HOST, CPANEL_USER, CPANEL_SSH_KEY, CPANEL_PORT
