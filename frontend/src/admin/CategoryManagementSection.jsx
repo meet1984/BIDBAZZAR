@@ -6,15 +6,19 @@ import {
   ChevronDown,
   ChevronRight,
   FolderPlus,
+  Image as ImageIcon,
   LoaderCircle,
   Pencil,
   Plus,
   Power,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import api from "../lib/api";
 import { errorMessage } from "../lib/format";
+import { resolveImageUrl } from "../lib/image";
+import { compressImage } from "../lib/imageCompression";
 
 export function CategoryManagementSection() {
   const [categories, setCategories] = useState([]);
@@ -29,6 +33,8 @@ export function CategoryManagementSection() {
 
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
+  const [formImage, setFormImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
 
@@ -160,6 +166,36 @@ export function CategoryManagementSection() {
     }
   };
 
+  const handleCategoryImageFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setModalError("Please select a valid image file.");
+      return;
+    }
+    setUploadingImage(true);
+    setModalError("");
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const { data } = await api.post("/admin/settings/about-categories/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (data?.imageUrl) {
+        setFormImage(data.imageUrl);
+      }
+    } catch {
+      try {
+        const compressed = await compressImage(file, 1200, 0.85);
+        setFormImage(compressed);
+      } catch {
+        setModalError("Failed to process image file.");
+      }
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   // Submit Category Create / Edit
   const handleSaveCategory = async (e) => {
     e.preventDefault();
@@ -175,12 +211,14 @@ export function CategoryManagementSection() {
         await api.post("/admin/categories", {
           name: formName.trim(),
           description: formDesc.trim() || undefined,
+          imageUrl: formImage.trim() || undefined,
           displayOrder: categories.length + 1,
         });
       } else {
         await api.patch(`/admin/categories/${categoryModal.category.id}`, {
           name: formName.trim(),
           description: formDesc.trim() || undefined,
+          imageUrl: formImage.trim() || undefined,
         });
       }
       setCategoryModal({ open: false, mode: "create", category: null });
@@ -259,6 +297,7 @@ export function CategoryManagementSection() {
           onClick={() => {
             setFormName("");
             setFormDesc("");
+            setFormImage("");
             setModalError("");
             setCategoryModal({ open: true, mode: "create", category: null });
           }}
@@ -297,6 +336,15 @@ export function CategoryManagementSection() {
                     >
                       {isExp ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
+
+                    {/* Category Photo Thumbnail */}
+                    <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-900 shadow-2xs">
+                      <img
+                        src={resolveImageUrl(cat.imageUrl || "/hero-auction-marketplace.png")}
+                        alt={cat.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
 
                     <div>
                       <div className="flex items-center gap-2">
@@ -356,6 +404,7 @@ export function CategoryManagementSection() {
                       onClick={() => {
                         setFormName(cat.name);
                         setFormDesc(cat.description || "");
+                        setFormImage(cat.imageUrl || "");
                         setModalError("");
                         setCategoryModal({ open: true, mode: "edit", category: cat });
                       }}
@@ -524,6 +573,43 @@ export function CategoryManagementSection() {
                   className="mt-1 w-full rounded-lg border border-slate-300 p-2.5 text-xs outline-none focus:border-[#2563eb]"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#0f172a]">Category Photo</label>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Displayed on the public About page and marketplace catalogues.
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-2xs">
+                    <img
+                      src={resolveImageUrl(formImage || "/hero-auction-marketplace.png")}
+                      alt="Category preview"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <input
+                      type="url"
+                      value={formImage}
+                      onChange={(e) => setFormImage(e.target.value)}
+                      placeholder="Photo URL (e.g. /hero-auction-marketplace.png or https://...)"
+                      className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs outline-none focus:border-[#2563eb]"
+                    />
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors">
+                      <Upload size={13} />
+                      <span>{uploadingImage ? "Uploading..." : "Upload Photo"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCategoryImageFileSelect}
+                        disabled={uploadingImage}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"

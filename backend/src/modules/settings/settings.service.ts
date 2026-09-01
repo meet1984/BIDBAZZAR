@@ -1,18 +1,47 @@
 import type { SettingsRepository } from "./settings.repository.js";
 import { settingsRepository } from "./settings.repository.js";
+import { categoryRepository } from "../categories/category.repository.js";
 import { AppError } from "../../shared/AppError.js";
 import { localStorageService } from "../../shared/storage/localStorage.service.js";
 
 const HOW_IT_WORKS_BANNER_KEY = "how_it_works_banner_url";
 const DEFAULT_BANNER_URL = "/hero-auction-marketplace.png";
 
+const ABOUT_HERO_IMAGE_1_KEY = "about_hero_image_1";
+const ABOUT_HERO_IMAGE_2_KEY = "about_hero_image_2";
+const ABOUT_HERO_IMAGE_3_KEY = "about_hero_image_3";
+const ABOUT_CATEGORIES_KEY = "about_categories";
+const DEFAULT_ABOUT_IMAGE = "/hero-auction-marketplace.png";
+
+export interface AboutPhotos {
+  heroImage1: string;
+  heroImage2: string;
+  heroImage3: string;
+}
+
+export interface AboutCategoryItem {
+  id?: number;
+  name: string;
+  slug: string;
+  imageUrl: string;
+  displayOrder: number;
+  isDisplayed: boolean;
+  iconName?: string;
+}
+
 function parseDataUri(dataUri: string): { buffer: Buffer; mimeType: string } | null {
-  const match = /^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/.exec(dataUri.trim());
+  const match = /^data:(image\/[a-zA-Z0-9+.-]+);base64,([\s\S]+)$/.exec(dataUri.trim());
   if (!match || !match[1] || !match[2]) return null;
   try {
-    const buffer = Buffer.from(match[2], "base64");
+    let mimeType = match[1].toLowerCase();
+    if (mimeType === "image/jpg" || mimeType === "image/pjpeg") {
+      mimeType = "image/jpeg";
+    }
+    const cleanBase64 = match[2].replace(/\s/g, "");
+    const buffer = Buffer.from(cleanBase64, "base64");
+    if (buffer.length === 0) return null;
     return {
-      mimeType: match[1].toLowerCase(),
+      mimeType,
       buffer,
     };
   } catch {
@@ -20,8 +49,63 @@ function parseDataUri(dataUri: string): { buffer: Buffer; mimeType: string } | n
   }
 }
 
+const DEFAULT_CURATED_CATEGORIES: AboutCategoryItem[] = [
+  { name: "Automotive & Vehicles", slug: "vehicles", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 1, isDisplayed: true },
+  { name: "Electronics & Tech", slug: "electronics", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 2, isDisplayed: true },
+  { name: "Antiques & Collectibles", slug: "collectibles", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 3, isDisplayed: true },
+  { name: "Fashion & Luxury", slug: "fashion-luxury", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 4, isDisplayed: true },
+  { name: "Industrial & Equipment", slug: "industrial-equipment", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 5, isDisplayed: true },
+  { name: "Home & Lifestyle", slug: "home-lifestyle", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 6, isDisplayed: true },
+  { name: "Jewelry & Watches", slug: "jewelry-watches", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 7, isDisplayed: true },
+  { name: "Other", slug: "other", imageUrl: DEFAULT_ABOUT_IMAGE, displayOrder: 8, isDisplayed: true },
+];
+
 export class SettingsService {
   constructor(private readonly repository: SettingsRepository) {}
+
+  private async processImageString(rawValue: unknown, defaultFallback: string): Promise<string> {
+    if (typeof rawValue !== "string") {
+      return defaultFallback;
+    }
+    let trimmed = rawValue.trim();
+    if (!trimmed) {
+      return defaultFallback;
+    }
+
+    if (trimmed.startsWith("data:image/")) {
+      const parsed = parseDataUri(trimmed);
+      if (!parsed) {
+        throw new AppError(422, "INVALID_IMAGE_DATA", "The provided image data is invalid.");
+      }
+      const stored = await localStorageService.saveImage(
+        parsed.buffer,
+        "photo.jpg",
+        parsed.mimeType,
+        "listings",
+      );
+      return stored.url;
+    }
+
+    // Auto-normalize relative paths without leading slash
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("/")) {
+      trimmed = "/" + trimmed;
+    }
+
+    const isLocalAsset = /^\/[a-zA-Z0-9/_.-]+(?:\.(?:png|jpe?g|webp|svg|gif|avif))?(?:\?.*)?$/i.test(trimmed);
+    let isWebUrl = false;
+    try {
+      const url = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+      isWebUrl = url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      isWebUrl = false;
+    }
+
+    if (!isLocalAsset && !isWebUrl) {
+      throw new AppError(422, "INVALID_IMAGE_URL", "Image URL must be a valid web URL or a local image path.");
+    }
+
+    return trimmed;
+  }
 
   async getHowItWorksBanner(): Promise<string> {
     return this.repository.getSetting(HOW_IT_WORKS_BANNER_KEY, DEFAULT_BANNER_URL);
@@ -31,10 +115,14 @@ export class SettingsService {
     if (!file || !file.buffer) {
       throw new AppError(400, "FILE_REQUIRED", "No image file uploaded.");
     }
+    let mimeType = file.mimetype?.toLowerCase() || "image/jpeg";
+    if (mimeType === "image/jpg" || mimeType === "image/pjpeg") {
+      mimeType = "image/jpeg";
+    }
     const stored = await localStorageService.saveImage(
       file.buffer,
       file.originalname || "banner.jpg",
-      file.mimetype,
+      mimeType,
       "listings",
     );
     await this.repository.setSetting(HOW_IT_WORKS_BANNER_KEY, stored.url);
@@ -42,42 +130,232 @@ export class SettingsService {
   }
 
   async updateHowItWorksBanner(bannerUrl: string): Promise<string> {
-    const trimmed = bannerUrl.trim();
-    if (!trimmed) {
-      return this.getHowItWorksBanner();
+    const processed = await this.processImageString(bannerUrl, DEFAULT_BANNER_URL);
+    await this.repository.setSetting(HOW_IT_WORKS_BANNER_KEY, processed);
+    return processed;
+  }
+
+  async getAboutPhotos(): Promise<AboutPhotos> {
+    const [heroImage1, heroImage2, heroImage3] = await Promise.all([
+      this.repository.getSetting(ABOUT_HERO_IMAGE_1_KEY, DEFAULT_ABOUT_IMAGE),
+      this.repository.getSetting(ABOUT_HERO_IMAGE_2_KEY, DEFAULT_ABOUT_IMAGE),
+      this.repository.getSetting(ABOUT_HERO_IMAGE_3_KEY, DEFAULT_ABOUT_IMAGE),
+    ]);
+    return { heroImage1, heroImage2, heroImage3 };
+  }
+
+  async updateAboutPhotos(photos: Partial<AboutPhotos>): Promise<AboutPhotos> {
+    const current = await this.getAboutPhotos();
+
+    if (photos.heroImage1 !== undefined) {
+      const processed = await this.processImageString(photos.heroImage1, DEFAULT_ABOUT_IMAGE);
+      await this.repository.setSetting(ABOUT_HERO_IMAGE_1_KEY, processed);
+      current.heroImage1 = processed;
     }
 
-    // Handle base64 Data URL (e.g. from client-side compression)
-    if (trimmed.startsWith("data:image/")) {
-      const parsed = parseDataUri(trimmed);
-      if (!parsed) {
-        throw new AppError(422, "INVALID_BANNER_DATA", "The provided image data is invalid.");
-      }
-      const stored = await localStorageService.saveImage(
-        parsed.buffer,
-        "banner.jpg",
-        parsed.mimeType,
-        "listings",
-      );
-      await this.repository.setSetting(HOW_IT_WORKS_BANNER_KEY, stored.url);
-      return stored.url;
+    if (photos.heroImage2 !== undefined) {
+      const processed = await this.processImageString(photos.heroImage2, DEFAULT_ABOUT_IMAGE);
+      await this.repository.setSetting(ABOUT_HERO_IMAGE_2_KEY, processed);
+      current.heroImage2 = processed;
     }
 
-    const isLocalAsset = /^\/[a-zA-Z0-9/._-]+\.(?:png|jpe?g|webp|svg)$/i.test(trimmed);
-    let isWebUrl = false;
+    if (photos.heroImage3 !== undefined) {
+      const processed = await this.processImageString(photos.heroImage3, DEFAULT_ABOUT_IMAGE);
+      await this.repository.setSetting(ABOUT_HERO_IMAGE_3_KEY, processed);
+      current.heroImage3 = processed;
+    }
+
+    return current;
+  }
+
+  async uploadAboutPhoto(slot: number, file: Express.Multer.File): Promise<AboutPhotos> {
+    if (slot < 1 || slot > 3) {
+      throw new AppError(400, "INVALID_SLOT", "Slot must be 1, 2, or 3.");
+    }
+    if (!file || !file.buffer) {
+      throw new AppError(400, "FILE_REQUIRED", "No image file uploaded.");
+    }
+
+    let mimeType = file.mimetype?.toLowerCase() || "image/jpeg";
+    if (mimeType === "image/jpg" || mimeType === "image/pjpeg") {
+      mimeType = "image/jpeg";
+    }
+
+    const stored = await localStorageService.saveImage(
+      file.buffer,
+      file.originalname || `about-slot-${slot}.jpg`,
+      mimeType,
+      "listings",
+    );
+
+    const key =
+      slot === 1
+        ? ABOUT_HERO_IMAGE_1_KEY
+        : slot === 2
+          ? ABOUT_HERO_IMAGE_2_KEY
+          : ABOUT_HERO_IMAGE_3_KEY;
+
+    await this.repository.setSetting(key, stored.url);
+    return this.getAboutPhotos();
+  }
+
+  async getAboutCategories(): Promise<AboutCategoryItem[]> {
+    let allDbCategories: any[] = [];
     try {
-      const url = new URL(trimmed);
-      isWebUrl = url.protocol === "https:" || url.protocol === "http:";
+      allDbCategories = await categoryRepository.findAllCategories(true);
     } catch {
-      isWebUrl = false;
+      allDbCategories = [];
     }
 
-    if (!isLocalAsset && !isWebUrl) {
-      throw new AppError(422, "INVALID_BANNER_URL", "Banner URL must be a valid web URL or a local image path.");
+    const dbCatMapById = new Map<number, any>();
+    const dbCatMapBySlug = new Map<string, any>();
+    for (const cat of allDbCategories) {
+      dbCatMapById.set(cat.id, cat);
+      if (cat.slug) dbCatMapBySlug.set(cat.slug.toLowerCase(), cat);
     }
 
-    await this.repository.setSetting(HOW_IT_WORKS_BANNER_KEY, trimmed);
-    return trimmed;
+    const raw = await this.repository.getSetting(ABOUT_CATEGORIES_KEY, "");
+    if (raw && typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const result: AboutCategoryItem[] = [];
+          for (let index = 0; index < parsed.length; index++) {
+            const item = parsed[index];
+            if (!item || typeof item !== "object") continue;
+
+            const id = typeof item.id === "number" ? item.id : undefined;
+            const slug = String(item.slug || "").trim();
+            const matchedDbCat =
+              (id ? dbCatMapById.get(id) : null) ||
+              (slug ? dbCatMapBySlug.get(slug.toLowerCase()) : null);
+
+            // If linked to a DB category that is deactivated, hide it from public display
+            const dbIsActive = matchedDbCat ? matchedDbCat.isActive : true;
+            const isExplicitlyHidden =
+              item.isDisplayed === false || item.isDisplayed === "false" || item.isDisplayed === 0;
+            const isDisplayed = dbIsActive && !isExplicitlyHidden;
+
+            // Live sync name & slug from the DB category so edits in Category Hierarchy take effect immediately!
+            const name = (matchedDbCat?.name || item.name || "Category").trim();
+            const syncedSlug = (
+              matchedDbCat?.slug ||
+              slug ||
+              name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+            ).trim();
+
+            // Photo: prefer custom item imageUrl if set, otherwise fallback to dbCat.imageUrl
+            const itemImg =
+              item.imageUrl && item.imageUrl !== DEFAULT_ABOUT_IMAGE ? item.imageUrl : null;
+            const dbImg =
+              matchedDbCat?.imageUrl && matchedDbCat.imageUrl !== DEFAULT_ABOUT_IMAGE
+                ? matchedDbCat.imageUrl
+                : null;
+            const imageUrl = itemImg || dbImg || item.imageUrl || DEFAULT_ABOUT_IMAGE;
+
+            result.push({
+              id: matchedDbCat?.id || id,
+              name,
+              slug: syncedSlug,
+              imageUrl,
+              displayOrder: typeof item.displayOrder === "number" ? item.displayOrder : index + 1,
+              isDisplayed,
+              iconName: item.iconName ? String(item.iconName) : undefined,
+            });
+          }
+
+          if (result.length > 0) {
+            return result;
+          }
+        }
+      } catch {
+        // Fallback if parsing fails
+      }
+    }
+
+    // Default fallback: return active marketplace categories from DB
+    const activeCats = allDbCategories.filter((c) => c.isActive);
+    if (activeCats.length > 0) {
+      return activeCats.map((cat, index) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        imageUrl: cat.imageUrl || DEFAULT_ABOUT_IMAGE,
+        displayOrder: index + 1,
+        isDisplayed: true,
+      }));
+    }
+
+    return DEFAULT_CURATED_CATEGORIES;
+  }
+
+  async updateAboutCategories(rawItems: unknown): Promise<AboutCategoryItem[]> {
+    if (!Array.isArray(rawItems)) {
+      throw new AppError(400, "INVALID_CATEGORIES_PAYLOAD", "Categories must be an array.");
+    }
+
+    const processed: AboutCategoryItem[] = [];
+
+    for (let i = 0; i < rawItems.length; i++) {
+      const item = rawItems[i];
+      if (!item || typeof item !== "object") continue;
+      const name = typeof item.name === "string" ? item.name.trim() : "";
+      if (!name) continue;
+
+      const slug =
+        typeof item.slug === "string" && item.slug.trim()
+          ? item.slug.trim()
+          : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+      const rawImg = item.imageUrl || item.image || DEFAULT_ABOUT_IMAGE;
+      const imageUrl = await this.processImageString(rawImg, DEFAULT_ABOUT_IMAGE);
+
+      const id = typeof item.id === "number" ? item.id : undefined;
+      const isDisplayed =
+        item.isDisplayed !== false && item.isDisplayed !== "false" && item.isDisplayed !== 0;
+
+      processed.push({
+        id,
+        name,
+        slug,
+        imageUrl,
+        displayOrder: typeof item.displayOrder === "number" ? item.displayOrder : i + 1,
+        isDisplayed,
+        iconName: typeof item.iconName === "string" ? item.iconName.trim() : undefined,
+      });
+
+      // If category has an ID in database and an image or name was updated, sync to DB category record too
+      if (id) {
+        try {
+          await categoryRepository.updateCategory(id, {
+            name,
+            imageUrl: imageUrl === DEFAULT_ABOUT_IMAGE ? undefined : imageUrl,
+          });
+        } catch {
+          // Ignore DB sync error if record not found
+        }
+      }
+    }
+
+    await this.repository.setSetting(ABOUT_CATEGORIES_KEY, JSON.stringify(processed));
+    return processed;
+  }
+
+  async uploadAboutCategoryImage(file: Express.Multer.File): Promise<string> {
+    if (!file || !file.buffer) {
+      throw new AppError(400, "FILE_REQUIRED", "No image file uploaded.");
+    }
+    let mimeType = file.mimetype?.toLowerCase() || "image/jpeg";
+    if (mimeType === "image/jpg" || mimeType === "image/pjpeg") {
+      mimeType = "image/jpeg";
+    }
+    const stored = await localStorageService.saveImage(
+      file.buffer,
+      file.originalname || "category-about.jpg",
+      mimeType,
+      "listings",
+    );
+    return stored.url;
   }
 }
 

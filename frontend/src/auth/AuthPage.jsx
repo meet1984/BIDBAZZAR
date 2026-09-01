@@ -513,8 +513,8 @@ function LoginForm() {
             type="button"
             onClick={() => setLoginRole("buyer")}
             className={`flex-1 rounded-md py-2.5 text-center text-xs font-bold transition-all ${loginRole === "buyer"
-                ? "bg-[#2563eb] text-white shadow-xs"
-                : "text-slate-600 hover:text-[#0f172a]"
+              ? "bg-[#2563eb] text-white shadow-xs"
+              : "text-slate-600 hover:text-[#0f172a]"
               }`}
           >
             Buyer Sign In
@@ -523,8 +523,8 @@ function LoginForm() {
             type="button"
             onClick={() => setLoginRole("seller")}
             className={`flex-1 rounded-md py-2.5 text-center text-xs font-bold transition-all ${loginRole === "seller"
-                ? "bg-[#0f172a] text-white shadow-xs"
-                : "text-slate-600 hover:text-[#0f172a]"
+              ? "bg-[#0f172a] text-white shadow-xs"
+              : "text-slate-600 hover:text-[#0f172a]"
               }`}
           >
             Seller Sign In
@@ -617,7 +617,7 @@ function LoginForm() {
           <>
             New to bidmylot?{" "}
             <Link
-              href={typeof window !== "undefined" && window.location.pathname.includes("seller") ? "/seller/register" : "/buyer/register"}
+              href={loginRole === "seller" ? "/seller/register" : "/buyer/register"}
               className="font-bold text-[#2563eb] hover:underline"
             >
               Create an account
@@ -1225,35 +1225,40 @@ function RegistrationForm() {
 
 export function AuthPageShell({ mode }) {
   const path = typeof window !== "undefined" ? window.location.pathname : "";
-  const isSeller = mode === "seller-login" || mode === "seller-register" || path.includes("seller");
   const isAdmin = mode === "admin-login" || path.includes("admin");
   const isLogin = mode ? mode.endsWith("-login") || mode === "login" : !path.includes("register");
+  const isSellerOnly = mode === "seller-register" || (path.includes("seller") && !isLogin);
+  const isBuyerOnly = mode === "buyer-register" || (path.includes("buyer") && !isLogin);
 
   const badgeText = isAdmin
     ? "Admin Portal"
-    : isSeller
-      ? "Seller Portal"
-      : "Buyer Portal";
+    : isLogin
+      ? "Account Portal"
+      : isSellerOnly
+        ? "Seller Portal"
+        : isBuyerOnly
+          ? "Buyer Portal"
+          : "Account Portal";
 
   const pageTitle = isLogin
     ? isAdmin
       ? "Admin Sign In"
-      : isSeller
-        ? "Seller Sign In"
-        : "Buyer Sign In"
-    : isSeller
+      : "Sign In to Your Account"
+    : isSellerOnly
       ? "Create a Seller Account"
-      : "Create a Buyer Account";
+      : isBuyerOnly
+        ? "Create a Buyer Account"
+        : "Create an Account";
 
   const pageDescription = isLogin
     ? isAdmin
       ? "Sign in with your administrator credentials to manage platform records."
-      : isSeller
-        ? "Sign in to access your seller dashboard, create listings, and track auctions."
-        : "Sign in to access your buyer dashboard, place bids, and track watchlist items."
-    : isSeller
+      : "Sign in to access your account, explore auctions, place bids, or manage your seller listings."
+    : isSellerOnly
       ? "Register a seller account to list property items for public auction."
-      : "Register a buyer account to start bidding on active property auctions.";
+      : isBuyerOnly
+        ? "Register a buyer account to start bidding on active property auctions."
+        : "Register an account to explore auctions, place bids, or list items for sale.";
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-[#0f172a] lg:grid lg:grid-cols-[minmax(440px,0.92fr)_minmax(560px,1.08fr)]">

@@ -21,6 +21,22 @@ publicSettingsRouter.get(
   }),
 );
 
+publicSettingsRouter.get(
+  "/about-photos",
+  asyncHandler(async (_req: Request, res: Response) => {
+    const photos = await settingsService.getAboutPhotos();
+    res.json({ photos });
+  }),
+);
+
+publicSettingsRouter.get(
+  "/about-categories",
+  asyncHandler(async (_req: Request, res: Response) => {
+    const categories = await settingsService.getAboutCategories();
+    res.json({ categories });
+  }),
+);
+
 adminSettingsRouter.use(requireAccountType("admin", "admin_employee"));
 
 adminSettingsRouter.put(
@@ -47,4 +63,85 @@ adminSettingsRouter.post(
     res.json({ success: true, bannerUrl });
   }),
 );
+
+adminSettingsRouter.put(
+  "/about-photos",
+  asyncHandler(async (req: Request, res: Response) => {
+    const body = req.body as {
+      photos?: {
+        heroImage1?: unknown;
+        heroImage2?: unknown;
+        heroImage3?: unknown;
+      };
+      heroImage1?: unknown;
+      heroImage2?: unknown;
+      heroImage3?: unknown;
+    };
+
+    const photosPayload: {
+      heroImage1?: string;
+      heroImage2?: string;
+      heroImage3?: string;
+    } = {};
+
+    const rawPhotos = body.photos || body;
+
+    if (typeof rawPhotos.heroImage1 === "string") {
+      photosPayload.heroImage1 = rawPhotos.heroImage1;
+    }
+    if (typeof rawPhotos.heroImage2 === "string") {
+      photosPayload.heroImage2 = rawPhotos.heroImage2;
+    }
+    if (typeof rawPhotos.heroImage3 === "string") {
+      photosPayload.heroImage3 = rawPhotos.heroImage3;
+    }
+
+    const photos = await settingsService.updateAboutPhotos(photosPayload);
+    res.json({ success: true, photos });
+  }),
+);
+
+adminSettingsRouter.post(
+  "/about-photos/upload",
+  upload.single("image"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const file = req.file;
+    const rawSlot = Number(req.body.slot ?? req.query.slot ?? 1);
+    const slot = Number.isInteger(rawSlot) && rawSlot >= 1 && rawSlot <= 3 ? rawSlot : 1;
+
+    if (!file) {
+      const photos = await settingsService.getAboutPhotos();
+      res.json({ success: true, photos });
+      return;
+    }
+
+    const photos = await settingsService.uploadAboutPhoto(slot, file);
+    res.json({ success: true, photos });
+  }),
+);
+
+adminSettingsRouter.put(
+  "/about-categories",
+  asyncHandler(async (req: Request, res: Response) => {
+    const body = req.body as { categories?: unknown } | unknown[];
+    const rawList = Array.isArray(body) ? body : (body as { categories?: unknown })?.categories;
+    const categories = await settingsService.updateAboutCategories(rawList || []);
+    res.json({ success: true, categories });
+  }),
+);
+
+adminSettingsRouter.post(
+  "/about-categories/upload",
+  upload.single("image"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ code: "FILE_REQUIRED", message: "No image file uploaded." });
+      return;
+    }
+    const imageUrl = await settingsService.uploadAboutCategoryImage(file);
+    res.json({ success: true, imageUrl });
+  }),
+);
+
 

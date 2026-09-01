@@ -20,7 +20,7 @@ function generateSlug(text: string): string {
 }
 
 export class CategoryService {
-  constructor(private readonly repository: CategoryRepository) {}
+  constructor(private readonly repository: CategoryRepository) { }
 
   async listPublic(withSubcategories = true) {
     const categories = await this.repository.findAllCategories(false);

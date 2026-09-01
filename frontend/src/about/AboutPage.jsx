@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Aperture,
   ArrowRight,
@@ -19,6 +19,8 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import { Navbar, Footer, Link, Image } from "../components";
+import api from "../lib/api";
+import { resolveImageUrl } from "../lib/image";
 
 const challenges = [
   {
@@ -137,51 +139,45 @@ const journey = [
   ["Result", "Both sides track the result", "Role-specific activity"],
 ];
 
-const categories = [
-  {
-    name: "Automotive & Vehicles",
-    slug: "vehicles",
-    icon: Car,
-    imageClass: "bb-img-1",
-  },
-  {
-    name: "Electronics & Tech",
-    slug: "electronics",
-    icon: Laptop,
-    imageClass: "bb-img-2",
-  },
-  {
-    name: "Antiques & Collectibles",
-    slug: "collectibles",
-    icon: Camera,
-    imageClass: "bb-img-3",
-  },
-  {
-    name: "Fashion & Luxury",
-    slug: "fashion-luxury",
-    icon: Gem,
-    imageClass: "bb-img-4",
-  },
-  {
-    name: "Industrial & Equipment",
-    slug: "industrial-equipment",
-    icon: Factory,
-    imageClass: "bb-img-5",
-  },
-  {
-    name: "Home & Lifestyle",
-    slug: "home-lifestyle",
-    icon: Home,
-    imageClass: "bb-img-6",
-  },
-  {
-    name: "Jewelry & Watches",
-    slug: "jewelry-watches",
-    icon: Gem,
-    imageClass: "bb-img-7",
-  },
-  { name: "Other", slug: "other", icon: Sparkles, imageClass: "bb-img-8" },
-];
+const CATEGORY_ICON_MAP = {
+  vehicles: Car,
+  vehicle: Car,
+  automotive: Car,
+  car: Car,
+  electronics: Laptop,
+  tech: Laptop,
+  computer: Laptop,
+  collectibles: Camera,
+  antique: Camera,
+  antiques: Camera,
+  "fashion-luxury": Gem,
+  fashion: Gem,
+  luxury: Gem,
+  "industrial-equipment": Factory,
+  industrial: Factory,
+  equipment: Factory,
+  "home-lifestyle": Home,
+  home: Home,
+  lifestyle: Home,
+  "jewelry-watches": Gem,
+  jewelry: Gem,
+  watches: Gem,
+  art: Sparkles,
+  paintings: Sparkles,
+  "real-estate": Home,
+  property: Home,
+};
+
+function getCategoryIcon(slug, name) {
+  const s = (slug || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  for (const [key, Icon] of Object.entries(CATEGORY_ICON_MAP)) {
+    if (s.includes(key) || n.includes(key)) {
+      return Icon;
+    }
+  }
+  return Sparkles;
+}
 
 const faqs = [
   [
@@ -347,7 +343,63 @@ function FAQSection() {
   );
 }
 
+const DEFAULT_HERO_IMAGE = "/hero-auction-marketplace.png";
+
 export default function AboutPage() {
+  const [heroPhotos, setHeroPhotos] = useState(() => {
+    try {
+      const cached = localStorage.getItem("about_photos");
+      return cached
+        ? JSON.parse(cached)
+        : {
+          heroImage1: DEFAULT_HERO_IMAGE,
+          heroImage2: DEFAULT_HERO_IMAGE,
+          heroImage3: DEFAULT_HERO_IMAGE,
+        };
+    } catch {
+      return {
+        heroImage1: DEFAULT_HERO_IMAGE,
+        heroImage2: DEFAULT_HERO_IMAGE,
+        heroImage3: DEFAULT_HERO_IMAGE,
+      };
+    }
+  });
+
+  const [aboutCategories, setAboutCategories] = useState(() => {
+    try {
+      const cached = localStorage.getItem("about_categories");
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    api
+      .get("/settings/about-photos")
+      .then(({ data }) => {
+        if (data?.photos) {
+          setHeroPhotos(data.photos);
+          try {
+            localStorage.setItem("about_photos", JSON.stringify(data.photos));
+          } catch { }
+        }
+      })
+      .catch(() => { });
+
+    api
+      .get("/settings/about-categories")
+      .then(({ data }) => {
+        if (data?.categories && Array.isArray(data.categories)) {
+          setAboutCategories(data.categories);
+          try {
+            localStorage.setItem("about_categories", JSON.stringify(data.categories));
+          } catch { }
+        }
+      })
+      .catch(() => { });
+  }, []);
+
   return (
     <>
       <style>{`
@@ -357,7 +409,7 @@ export default function AboutPage() {
         .bb-heading{max-width:790px}.bb-heading h2,.bb-audience h2{margin:14px 0 0;color:var(--navy);font-size:clamp(38px,4.4vw,64px);font-weight:720;letter-spacing:-.058em;line-height:1.04}.bb-heading>p{max-width:610px;margin:20px 0 0;color:var(--slate);font-size:15px;line-height:1.75}
         .bb-button{min-height:50px;padding:0 21px;display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;border-radius:4px;font-size:13px;font-weight:730;transition:background .2s,color .2s,border-color .2s,transform .2s}.bb-button:hover{transform:translateY(-2px)}.bb-button-primary{background:var(--blue);color:white}.bb-button-primary:hover{background:var(--blue2)}.bb-button-secondary{border-color:#cbd5e1;background:white;color:var(--navy)}.bb-button-secondary:hover{border-color:var(--navy)}.bb-button-light{background:white;color:var(--navy)}
         .bb-hero{min-height:720px;padding:clamp(58px,7vw,110px) clamp(18px,6vw,92px);display:grid;grid-template-columns:minmax(0,.93fr) minmax(440px,1.07fr);gap:clamp(40px,7vw,110px);align-items:center;background:linear-gradient(110deg,#ffffff 0 60%,#f8fafc 60%)}.bb-hero-copy{max-width:690px}.bb-hero h1{margin:22px 0 24px;color:var(--navy);font-size:clamp(48px,5.35vw,78px);font-weight:740;letter-spacing:-.067em;line-height:1.01}.bb-hero h1 em{color:var(--blue);font-style:normal;font-weight:470}.bb-hero-copy>p{max-width:620px;margin:0;color:#64748b;font-size:clamp(16px,1.35vw,19px);line-height:1.72}.bb-hero-actions{margin-top:31px;display:flex;flex-wrap:wrap;gap:10px}.bb-hero-note{margin-top:29px;padding-top:20px;display:flex;gap:11px;border-top:1px solid var(--line);color:var(--blue);font-size:12px;line-height:1.55}.bb-hero-note span{max-width:490px;color:var(--slate)}
-        .bb-catalogue{min-height:560px;position:relative;display:grid;grid-template-columns:1.14fr .86fr;grid-template-rows:1fr 1fr;gap:10px}.bb-catalogue-card{position:relative;overflow:hidden;background:var(--navy);box-shadow:0 22px 55px rgba(15,23,42,.13)}.bb-catalogue-card:first-child{grid-row:1/3}.bb-catalogue-card img{object-fit:cover;transform:scale(1.1);filter:saturate(.95) contrast(1.02)}.bb-catalogue-card:nth-child(2) img{object-position:78% center;transform:scale(1.35)}.bb-catalogue-card:nth-child(3) img{object-position:25% 85%;transform:scale(1.45)}.bb-catalogue-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(15,23,42,.72))}.bb-catalogue-tag{position:absolute;z-index:2;left:18px;right:18px;bottom:16px;display:flex;align-items:end;justify-content:space-between;gap:10px;color:white}.bb-catalogue-tag span{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:680}.bb-catalogue-tag small{color:#e2e8f0;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.bb-catalogue-mark{position:absolute;z-index:3;top:18px;left:18px;padding:8px 10px;background:rgba(255,255,255,.94);color:var(--blue);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+        .bb-catalogue{min-height:560px;position:relative;display:grid;grid-template-columns:1.14fr .86fr;grid-template-rows:1fr 1fr;gap:10px}.bb-catalogue-card{position:relative;overflow:hidden;background:var(--navy);box-shadow:0 22px 55px rgba(15,23,42,.13)}.bb-catalogue-card:first-child{grid-row:1/3}.bb-catalogue-card img{object-fit:cover;object-position:center;filter:saturate(1) contrast(1.02);transition:transform .3s ease}.bb-catalogue-card:hover img{transform:scale(1.02)}.bb-catalogue-card:nth-child(2) img{object-fit:cover;object-position:center}.bb-catalogue-card:nth-child(3) img{object-fit:cover;object-position:center}.bb-catalogue-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(15,23,42,.72))}.bb-catalogue-tag{position:absolute;z-index:2;left:18px;right:18px;bottom:16px;display:flex;align-items:end;justify-content:space-between;gap:10px;color:white}.bb-catalogue-tag span{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:680}.bb-catalogue-tag small{color:#e2e8f0;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.bb-catalogue-mark{position:absolute;z-index:3;top:18px;left:18px;padding:8px 10px;background:rgba(255,255,255,.94);color:var(--blue);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
         .bb-purpose{display:grid;grid-template-columns:.72fr 1.28fr;gap:clamp(50px,10vw,155px);align-items:start;background:white}.bb-purpose .bb-label{margin-top:10px}.bb-purpose-copy h2{max-width:870px;margin:0 0 34px;color:var(--navy);font-size:clamp(42px,5vw,72px);font-weight:690;letter-spacing:-.062em;line-height:1.05}.bb-purpose-copy p{max-width:810px;margin:0;color:var(--slate);font-size:16px;line-height:1.85}.bb-purpose-copy p+p{margin-top:23px;padding-left:28px;border-left:2px solid var(--blue);color:#334155}
         .bb-challenges{background:var(--cream)}.bb-challenge-grid{margin-top:54px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}.bb-challenge{min-height:305px;padding:28px;display:flex;flex-direction:column;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.6);transition:background .2s,transform .2s}.bb-challenge:hover{background:white;transform:translateY(-3px)}.bb-challenge-top{display:flex;align-items:center;justify-content:space-between;color:var(--blue)}.bb-challenge-top small{color:#94a3b8;font-family:monospace;font-size:11px;font-weight:700}.bb-challenge h3{margin:auto 0 12px;color:var(--navy);font-size:18px;letter-spacing:-.025em}.bb-challenge p{margin:0;color:var(--slate);font-size:12px;line-height:1.7}
         .bb-approach{background:var(--navy);color:white}.bb-approach .bb-label{color:#60a5fa}.bb-approach .bb-heading h2{color:white}.bb-approach .bb-heading>p{color:#94a3b8}.bb-approach-grid{margin-top:55px;display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid #334155;border-left:1px solid #334155}.bb-approach-card{min-height:220px;padding:34px;display:grid;grid-template-columns:50px 1fr;gap:22px;border-right:1px solid #334155;border-bottom:1px solid #334155}.bb-approach-card>span{width:42px;height:42px;display:grid;place-items:center;border:1px solid #475569;border-radius:50%;color:#60a5fa;font-family:monospace;font-size:11px;font-weight:700}.bb-approach-card h3{margin:4px 0 10px;font-size:18px}.bb-approach-card p{max-width:520px;margin:0;color:#cbd5e1;font-size:12px;line-height:1.75}
@@ -418,7 +470,7 @@ export default function AboutPage() {
             >
               <div className="bb-catalogue-card">
                 <Image
-                  src="/hero-auction-marketplace.png"
+                  src={heroPhotos?.heroImage1 || DEFAULT_HERO_IMAGE}
                   alt="A curated catalogue arrangement of collectible auction items"
                   fill
                   priority
@@ -434,7 +486,7 @@ export default function AboutPage() {
               </div>
               <div className="bb-catalogue-card">
                 <Image
-                  src="/hero-auction-marketplace.png"
+                  src={heroPhotos?.heroImage2 || DEFAULT_HERO_IMAGE}
                   alt="Camera and premium accessories prepared for auction"
                   fill
                   sizes="(max-width: 800px) 50vw, 18vw"
@@ -448,7 +500,7 @@ export default function AboutPage() {
               </div>
               <div className="bb-catalogue-card">
                 <Image
-                  src="/hero-auction-marketplace.png"
+                  src={heroPhotos?.heroImage3 || DEFAULT_HERO_IMAGE}
                   alt="Premium items represented in an auction catalogue"
                   fill
                   sizes="(max-width: 800px) 50vw, 18vw"
@@ -640,25 +692,38 @@ export default function AboutPage() {
               copy="Explore the intended range of bidmylot auctions without inflated counts or unsupported claims."
             />
             <div className="bb-category-grid">
-              {categories.map(({ name, slug, icon: Icon, imageClass }) => (
-                <Link
-                  className={`bb-category ${imageClass}`}
-                  href={`/auctions?category=${encodeURIComponent(name)}`}
-                  key={slug}
-                >
-                  <Image
-                    src="/hero-auction-marketplace.png"
-                    alt=""
-                    fill
-                    sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 25vw"
-                  />
-                  <span className="bb-category-content">
-                    <Icon size={20} aria-hidden="true" />
-                    <span>{name}</span>
-                    <ArrowRight size={18} aria-hidden="true" />
-                  </span>
-                </Link>
-              ))}
+              {(aboutCategories.length > 0
+                ? aboutCategories.filter(
+                  (c) =>
+                    c &&
+                    c.isDisplayed !== false &&
+                    c.isDisplayed !== "false" &&
+                    c.isDisplayed !== 0,
+                )
+                : []
+              ).map((cat, index) => {
+                const Icon = getCategoryIcon(cat.slug, cat.name);
+                const photoSrc = resolveImageUrl(cat.imageUrl || DEFAULT_HERO_IMAGE);
+                return (
+                  <Link
+                    className="bb-category"
+                    href={`/auctions?category=${encodeURIComponent(cat.name)}`}
+                    key={cat.id || cat.slug || index}
+                  >
+                    <Image
+                      src={photoSrc}
+                      alt={cat.name || "Category"}
+                      fill
+                      sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                    />
+                    <span className="bb-category-content">
+                      <Icon size={20} aria-hidden="true" />
+                      <span>{cat.name}</span>
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
