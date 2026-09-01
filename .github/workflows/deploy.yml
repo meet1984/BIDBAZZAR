@@ -87,9 +87,9 @@ jobs:
           for item in deploy/backend/*; do
             base="$(basename "$item")"
             if [ -d "$item" ]; then
-              echo "put -r $base" >> sftp_backend.batch
+              echo "put -r \"$base\"" >> sftp_backend.batch
             elif [ -f "$item" ]; then
-              echo "put $base" >> sftp_backend.batch
+              echo "put \"$base\"" >> sftp_backend.batch
             fi
           done
 
@@ -121,11 +121,11 @@ jobs:
 
           for item in deploy/frontend/* deploy/frontend/.*; do
             base="$(basename "$item")"
-            if [ "$base" != "." ] && [ "$base" != ".." ]; then
+            if [ "$base" != "." ] && [ "$base" != ".." ] && [ "$base" != "*" ]; then
               if [ -d "$item" ]; then
-                echo "put -r $base" >> sftp_frontend.batch
+                echo "put -r \"$base\"" >> sftp_frontend.batch
               elif [ -f "$item" ]; then
-                echo "put $base" >> sftp_frontend.batch
+                echo "put \"$base\"" >> sftp_frontend.batch
               fi
             fi
           done
