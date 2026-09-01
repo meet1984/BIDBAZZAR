@@ -32,33 +32,31 @@ jobs:
           npm run typecheck
           npm run build
 
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CPANEL_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${{ secrets.CPANEL_PORT }}" -H "${{ secrets.CPANEL_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Prepare backend
         run: |
           npm ci --omit=dev --workspace @bidmylot/backend
           mkdir -p deploy/backend
           cp backend/app.js backend/package.json deploy/backend/
           cp -r backend/dist backend/migrations node_modules deploy/backend/
+          rm -rf deploy/backend/node_modules/@bidmylot
 
       - name: Upload backend
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          source: deploy/backend
-          target: /home/dcgixwyd/bidmylot.backend
-          strip_components: 2
-          overwrite: true
+        run: |
+          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "mkdir -p /home/dcgixwyd/bidmylot.backend"
+          tar -czf - -C deploy/backend . | $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "tar -xzf - -C /home/dcgixwyd/bidmylot.backend"
 
       - name: Restart Passenger
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          script: |
+        run: |
+          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} << 'EOF'
             set -eu
             BACKEND=/home/dcgixwyd/bidmylot.backend
             echo "Checking $BACKEND"
@@ -78,6 +76,7 @@ jobs:
             mkdir -p "$BACKEND/uploads" "$BACKEND/private_uploads" "$BACKEND/tmp"
             touch "$BACKEND/tmp/restart.txt"
             echo "Passenger restart requested successfully"
+          EOF
 
       - name: Prepare frontend
         run: |
@@ -85,19 +84,13 @@ jobs:
           cp -r frontend/dist/. deploy/frontend/
 
       - name: Upload frontend
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.CPANEL_HOST }}
-          username: ${{ secrets.CPANEL_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_PORT }}
-          source: deploy/frontend
-          target: /home/dcgixwyd/bidmylot.com
-          strip_components: 2
-          overwrite: true
+        run: |
+          SSH_CMD="ssh -p ${{ secrets.CPANEL_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "mkdir -p /home/dcgixwyd/bidmylot.com"
+          tar -czf - -C deploy/frontend . | $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "tar -xzf - -C /home/dcgixwyd/bidmylot.com"
 
 # Required GitHub secrets:
 # CPANEL_HOST, CPANEL_USER, CPANEL_SSH_KEY, CPANEL_PORT
 #
 # Create /home/dcgixwyd/bidmylot.backend/.env manually before the first deploy.
-# Database migrations are manual and are never ru
+# Database migrations are manual and are never run automatically in CI/CD.
