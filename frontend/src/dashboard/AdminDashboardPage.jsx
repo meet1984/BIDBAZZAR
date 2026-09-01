@@ -133,7 +133,6 @@ export default function AdminDashboardPage() {
   const [aboutCategoriesSaving, setAboutCategoriesSaving] = useState(false);
   const [aboutCatUploadingIdx, setAboutCatUploadingIdx] = useState(null);
   const [aboutCategoriesMsg, setAboutCategoriesMsg] = useState({ type: "", text: "" });
-  const [aboutCatPreviewFilter, setAboutCatPreviewFilter] = useState("all");
 
   // Load Overview Data
   const loadOverview = useCallback(async () => {

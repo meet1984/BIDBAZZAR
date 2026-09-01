@@ -9,6 +9,7 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "tests/phase*.test.ts",
+      "tests/multi_unit_*.test.ts",
     ],
   },
 });

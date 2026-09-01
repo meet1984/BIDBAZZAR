@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronRight,
   FolderPlus,
-  Image as ImageIcon,
   LoaderCircle,
   Pencil,
   Plus,

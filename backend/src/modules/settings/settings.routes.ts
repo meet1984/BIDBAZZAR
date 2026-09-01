@@ -106,7 +106,9 @@ adminSettingsRouter.post(
   upload.single("image"),
   asyncHandler(async (req: Request, res: Response) => {
     const file = req.file;
-    const rawSlot = Number(req.body.slot ?? req.query.slot ?? 1);
+    const rawBody = req.body as Record<string, unknown> | undefined;
+    const slotVal = rawBody?.slot ?? req.query.slot;
+    const rawSlot = Number(slotVal ?? 1);
     const slot = Number.isInteger(rawSlot) && rawSlot >= 1 && rawSlot <= 3 ? rawSlot : 1;
 
     if (!file) {
@@ -123,9 +125,9 @@ adminSettingsRouter.post(
 adminSettingsRouter.put(
   "/about-categories",
   asyncHandler(async (req: Request, res: Response) => {
-    const body = req.body as { categories?: unknown } | unknown[];
-    const rawList = Array.isArray(body) ? body : (body as { categories?: unknown })?.categories;
-    const categories = await settingsService.updateAboutCategories(rawList || []);
+    const body = req.body as Record<string, unknown> | unknown[] | undefined;
+    const rawList = Array.isArray(body) ? body : (body?.categories ?? []);
+    const categories = await settingsService.updateAboutCategories(rawList);
     res.json({ success: true, categories });
   }),
 );

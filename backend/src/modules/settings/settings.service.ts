@@ -1,6 +1,6 @@
 import type { SettingsRepository } from "./settings.repository.js";
 import { settingsRepository } from "./settings.repository.js";
-import { categoryRepository } from "../categories/category.repository.js";
+import { categoryRepository, type CategoryWithStats } from "../categories/category.repository.js";
 import { AppError } from "../../shared/AppError.js";
 import { localStorageService } from "../../shared/storage/localStorage.service.js";
 
@@ -200,15 +200,15 @@ export class SettingsService {
   }
 
   async getAboutCategories(): Promise<AboutCategoryItem[]> {
-    let allDbCategories: any[] = [];
+    let allDbCategories: CategoryWithStats[] = [];
     try {
       allDbCategories = await categoryRepository.findAllCategories(true);
     } catch {
       allDbCategories = [];
     }
 
-    const dbCatMapById = new Map<number, any>();
-    const dbCatMapBySlug = new Map<string, any>();
+    const dbCatMapById = new Map<number, CategoryWithStats>();
+    const dbCatMapBySlug = new Map<string, CategoryWithStats>();
     for (const cat of allDbCategories) {
       dbCatMapById.set(cat.id, cat);
       if (cat.slug) dbCatMapBySlug.set(cat.slug.toLowerCase(), cat);
@@ -217,15 +217,15 @@ export class SettingsService {
     const raw = await this.repository.getSetting(ABOUT_CATEGORIES_KEY, "");
     if (raw && typeof raw === "string") {
       try {
-        const parsed = JSON.parse(raw);
+        const parsed: unknown = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const result: AboutCategoryItem[] = [];
           for (let index = 0; index < parsed.length; index++) {
-            const item = parsed[index];
+            const item = parsed[index] as Record<string, unknown> | null;
             if (!item || typeof item !== "object") continue;
 
             const id = typeof item.id === "number" ? item.id : undefined;
-            const slug = String(item.slug || "").trim();
+            const slug = typeof item.slug === "string" ? item.slug.trim() : "";
             const matchedDbCat =
               (id ? dbCatMapById.get(id) : null) ||
               (slug ? dbCatMapBySlug.get(slug.toLowerCase()) : null);
@@ -237,7 +237,8 @@ export class SettingsService {
             const isDisplayed = dbIsActive && !isExplicitlyHidden;
 
             // Live sync name & slug from the DB category so edits in Category Hierarchy take effect immediately!
-            const name = (matchedDbCat?.name || item.name || "Category").trim();
+            const rawItemName = typeof item.name === "string" ? item.name : "";
+            const name = (matchedDbCat?.name || rawItemName || "Category").trim();
             const syncedSlug = (
               matchedDbCat?.slug ||
               slug ||
@@ -245,22 +246,26 @@ export class SettingsService {
             ).trim();
 
             // Photo: prefer custom item imageUrl if set, otherwise fallback to dbCat.imageUrl
+            const rawItemImg = typeof item.imageUrl === "string" ? item.imageUrl : null;
             const itemImg =
-              item.imageUrl && item.imageUrl !== DEFAULT_ABOUT_IMAGE ? item.imageUrl : null;
+              rawItemImg && rawItemImg !== DEFAULT_ABOUT_IMAGE ? rawItemImg : null;
             const dbImg =
               matchedDbCat?.imageUrl && matchedDbCat.imageUrl !== DEFAULT_ABOUT_IMAGE
                 ? matchedDbCat.imageUrl
                 : null;
-            const imageUrl = itemImg || dbImg || item.imageUrl || DEFAULT_ABOUT_IMAGE;
+            const imageUrl = itemImg || dbImg || rawItemImg || DEFAULT_ABOUT_IMAGE;
+
+            const displayOrder = typeof item.displayOrder === "number" ? item.displayOrder : index + 1;
+            const iconName = typeof item.iconName === "string" && item.iconName.trim() ? item.iconName.trim() : undefined;
 
             result.push({
               id: matchedDbCat?.id || id,
               name,
               slug: syncedSlug,
               imageUrl,
-              displayOrder: typeof item.displayOrder === "number" ? item.displayOrder : index + 1,
+              displayOrder,
               isDisplayed,
-              iconName: item.iconName ? String(item.iconName) : undefined,
+              iconName,
             });
           }
 
@@ -297,7 +302,7 @@ export class SettingsService {
     const processed: AboutCategoryItem[] = [];
 
     for (let i = 0; i < rawItems.length; i++) {
-      const item = rawItems[i];
+      const item = rawItems[i] as Record<string, unknown> | null;
       if (!item || typeof item !== "object") continue;
       const name = typeof item.name === "string" ? item.name.trim() : "";
       if (!name) continue;
@@ -307,21 +312,29 @@ export class SettingsService {
           ? item.slug.trim()
           : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-      const rawImg = item.imageUrl || item.image || DEFAULT_ABOUT_IMAGE;
+      const rawImg =
+        typeof item.imageUrl === "string"
+          ? item.imageUrl
+          : typeof item.image === "string"
+            ? item.image
+            : DEFAULT_ABOUT_IMAGE;
       const imageUrl = await this.processImageString(rawImg, DEFAULT_ABOUT_IMAGE);
 
       const id = typeof item.id === "number" ? item.id : undefined;
       const isDisplayed =
         item.isDisplayed !== false && item.isDisplayed !== "false" && item.isDisplayed !== 0;
 
+      const displayOrder = typeof item.displayOrder === "number" ? item.displayOrder : i + 1;
+      const iconName = typeof item.iconName === "string" && item.iconName.trim() ? item.iconName.trim() : undefined;
+
       processed.push({
         id,
         name,
         slug,
         imageUrl,
-        displayOrder: typeof item.displayOrder === "number" ? item.displayOrder : i + 1,
+        displayOrder,
         isDisplayed,
-        iconName: typeof item.iconName === "string" ? item.iconName.trim() : undefined,
+        iconName,
       });
 
       // If category has an ID in database and an image or name was updated, sync to DB category record too
