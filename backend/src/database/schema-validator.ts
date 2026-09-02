@@ -35,9 +35,17 @@ export const REQUIRED_TABLES = [
   "notifications",
   "support_enquiries",
   "newsletter_subscriptions",
+  "legal_pages",
 ] as const;
 
 export const REQUIRED_COLUMNS: Record<string, string[]> = {
+  legal_pages: [
+    "id",
+    "slug",
+    "title",
+    "content_html",
+    "updated_by",
+  ],
   offers: [
     "id",
     "listing_id",

@@ -14,6 +14,7 @@ import { adminSupportRouter, supportRouter } from "./modules/support/support.rou
 import { userRouter } from "./modules/users/user.routes.js";
 import { watchlistRouter } from "./modules/watchlist/watchlist.routes.js";
 import { adminSettingsRouter, publicSettingsRouter } from "./modules/settings/settings.routes.js";
+import { adminLegalPageRouter, publicLegalPageRouter } from "./modules/legal-pages/legal-page.routes.js";
 import { buyerProfileRouter } from "./modules/buyer-profile/buyer-profile.routes.js";
 import { sellerProfileRouter } from "./modules/seller-profile/seller-profile.routes.js";
 import { adminVerificationRouter, verificationRouter } from "./modules/verification/verification.routes.js";
@@ -116,6 +117,10 @@ export function createApp() {
   app.use("/api/newsletter", newsletterRouter);
   app.use("/api/settings", publicSettingsRouter);
   app.use("/api/admin/settings", adminSettingsRouter);
+  app.use("/api/legal-pages", publicLegalPageRouter);
+  app.use("/api/legal", publicLegalPageRouter);
+  app.use("/api/admin/legal-pages", adminLegalPageRouter);
+  app.use("/api/admin/legal", adminLegalPageRouter);
   app.use("/api/buyer/profile", buyerProfileRouter);
   app.use("/api/seller/profile", sellerProfileRouter);
   app.use("/api/verification/documents", verificationDocumentRouter);

@@ -45,6 +45,7 @@ import { resolveImageUrl } from "../lib/image";
 import { EmptyState, LoadingState } from "../components";
 import { VerificationQueueSection } from "../admin/VerificationQueueSection";
 import { CategoryManagementSection } from "../admin/CategoryManagementSection";
+import { LegalPagesSection } from "../admin/LegalPagesSection";
 import { ListingReviewModal } from "../admin/ListingReviewModal";
 import { DashboardLayout } from "./DashboardLayout";
 import AuctionForm from "./AuctionForm";
@@ -56,7 +57,7 @@ export default function AdminDashboardPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
-      const validTabs = ["auctions", "categories", "verification", "overview", "users", "support", "howItWorks", "aboutPhotos"];
+      const validTabs = ["auctions", "categories", "verification", "overview", "users", "support", "legalPages", "howItWorks", "aboutPhotos"];
       if (tabParam && validTabs.includes(tabParam)) {
         return tabParam;
       }
@@ -2343,6 +2344,9 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Legal & Policy Pages Tab */}
+      {activeTab === "legalPages" && <LegalPagesSection />}
 
       {/* Comprehensive Review & Moderation Modal */}
       {reviewModalAuction && (

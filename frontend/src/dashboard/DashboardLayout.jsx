@@ -39,6 +39,7 @@ const ADMIN_NAV_GROUPS = [
   {
     heading: "Page Management",
     items: [
+      { id: "legalPages", label: "Legal Pages", icon: FileText, isTab: true },
       { id: "howItWorks", label: "How It Works Banner", icon: FileText, isTab: true },
       { id: "aboutPhotos", label: "About Page Photos", icon: ImageIcon, isTab: true },
     ],

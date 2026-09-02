@@ -872,6 +872,23 @@ CREATE TABLE IF NOT EXISTS `newsletter_subscriptions` (
   UNIQUE KEY `uq_newsletter_subscriptions_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------------
+-- 34. Legal Pages (Terms & Conditions, Privacy Policy)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `legal_pages` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` ENUM('terms', 'privacy') NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `content_html` LONGTEXT NOT NULL,
+  `updated_by` BIGINT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_legal_pages_slug` (`slug`),
+  KEY `idx_legal_pages_updated_by` (`updated_by`),
+  CONSTRAINT `fk_legal_pages_updated_by_account` FOREIGN KEY (`updated_by`) REFERENCES `accounts` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================================================
 -- DEFAULT SEED DATA (Safe / Idempotent)
 -- ==============================================================================
@@ -948,7 +965,15 @@ ON DUPLICATE KEY UPDATE
   `display_order` = VALUES(`display_order`),
   `is_active` = VALUES(`is_active`);
 
--- 4. Mark all historical migrations as executed
+-- 4. Legal Pages (Default Marketplace Terms & Privacy Policy)
+INSERT INTO `legal_pages` (`slug`, `title`, `content_html`) VALUES
+('terms', 'Marketplace Terms & Conditions', '<h2>1. Marketplace Overview & Account Accuracy</h2>\n<p>BidMyLot is a dedicated auction and offer marketplace connecting buyers and sellers for negotiated single-unit and multi-unit lots. All users must provide accurate, verifiable account details and listing information at all times.</p>\n<h2>2. Offers, Negotiations & Agreements</h2>\n<p>Offers and bids placed on BidMyLot are private between the buyer, seller, and authorized marketplace administrators. A confirmed offer or allocation creates a direct, binding transaction agreement between the buyer and seller.</p>\n<h2>3. Settlement & Logistics</h2>\n<p>BidMyLot facilitates listing discovery, offer negotiation, and deal confirmation. BidMyLot does not process direct payments, delivery, or logistics collection. Parties are directly responsible for executing settlement and delivery as agreed.</p>\n<h2>4. Prohibited Activities</h2>\n<p>Fraud, price manipulation, shill bidding, self-offering, harassment, and unauthorized system access are strictly prohibited. Violations will result in immediate account suspension and potential legal action.</p>\n<h2>5. Reviews & Dispute Resolution</h2>\n<p>All dispute actions and transaction reviews must reflect genuine transactions. The marketplace administration reserves the right to moderate reviews and oversee dispute resolution according to platform policies.</p>'),
+('privacy', 'Privacy Policy & Data Notice', '<h2>1. Information We Collect</h2>\n<p>BidMyLot collects and processes account details, verification documents, listings, offers, orders, and inquiry information necessary to operate a secure marketplace.</p>\n<h2>2. Document Privacy & Confidentiality</h2>\n<p>Government identity and business verification documents are strictly private and accessible only through authorized, authenticated administrative endpoints for verification purposes.</p>\n<h2>3. Public vs Private Profile Information</h2>\n<p>Public marketplace profiles exclude private offer terms, confidential identity records, and direct contact details. Contact information is shared only between confirmed transaction counterparties and authorized administrators.</p>\n<h2>4. Data Retention & Security</h2>\n<p>Operational, transactional, and audit records are retained securely as required for security auditing, fraud prevention, dispute resolution, and legal compliance.</p>\n<h2>5. Your Rights & Data Requests</h2>\n<p>Users may review and update their profile details or contact BidMyLot support to request data corrections or account inquiries.</p>')
+ON DUPLICATE KEY UPDATE
+  `title` = VALUES(`title`),
+  `content_html` = VALUES(`content_html`);
+
+-- 5. Mark all historical migrations as executed
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES
 ('001_initial_schema.sql'),
 ('002_expand_image_url.sql'),
