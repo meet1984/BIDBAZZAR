@@ -6,7 +6,6 @@ import {
   Printer,
   HelpCircle,
   ChevronRight,
-  RefreshCw,
   AlertCircle,
 } from "lucide-react";
 import { Footer, Navbar, Link } from "../components";

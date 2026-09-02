@@ -10,7 +10,6 @@ import {
   History,
   Info,
   Loader2,
-  RefreshCw,
   Save,
   ShieldCheck,
   Undo2,

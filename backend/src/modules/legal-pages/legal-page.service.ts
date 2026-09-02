@@ -1,5 +1,5 @@
 import { AppError } from "../../shared/AppError.js";
-import { legalPageRepository, LegalPageRepository } from "./legal-page.repository.js";
+import { legalPageRepository, type LegalPageRepository } from "./legal-page.repository.js";
 import type { LegalPageRecord, LegalPageSlug } from "./legal-page.types.js";
 import type { UpdateLegalPageInput } from "./legal-page.schemas.js";
 
